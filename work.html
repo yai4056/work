@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ระบบจัดการงานและการประชุม</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&family=Pridi:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#1f2733;          /* ตัวอักษรหลัก */
+  --paper:#f7f5f0;        /* พื้นกระดาษราชการ */
+  --card:#ffffff;
+  --navy:#1d3557;         /* น้ำเงินราชการ */
+  --navy-soft:#e8edf5;
+  --gold:#b8860b;         /* ทองตราครุฑ */
+  --line:#dcd7cc;
+  --muted:#6b7280;
+  --red:#b02a30;
+  --red-soft:#fbeaea;
+  --amber:#9a6700;
+  --amber-soft:#fdf3dc;
+  --green:#1f7a3d;
+  --green-soft:#e6f4ea;
+  --radius:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:'Sarabun',system-ui,sans-serif;
+  background:var(--paper);
+  color:var(--ink);
+  font-size:15.5px;
+  line-height:1.55;
+  padding-bottom:90px;
+}
+header{
+  background:var(--navy);
+  color:#fff;
+  padding:16px 18px 14px;
+  border-bottom:3px solid var(--gold);
+}
+header h1{
+  font-family:'Pridi',serif;
+  font-size:1.25rem;
+  font-weight:600;
+  letter-spacing:.2px;
+}
+header .today{font-size:.85rem;opacity:.85;margin-top:2px}
+.wrap{max-width:760px;margin:0 auto;padding:14px}
+
+/* ── แถบเตือน ── */
+.alerts{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+.alert{
+  display:flex;gap:10px;align-items:flex-start;
+  padding:10px 12px;border-radius:var(--radius);
+  font-size:.92rem;font-weight:500;
+  border:1px solid transparent;
+}
+.alert.red{background:var(--red-soft);color:var(--red);border-color:#efc7c9}
+.alert.amber{background:var(--amber-soft);color:var(--amber);border-color:#ecd9a8}
+.alert.blue{background:var(--navy-soft);color:var(--navy);border-color:#c6d3e6}
+.alert .ic{flex-shrink:0;margin-top:1px}
+
+/* ── แท็บ ── */
+.tabs{
+  position:fixed;bottom:0;left:0;right:0;z-index:50;
+  display:flex;background:#fff;border-top:1px solid var(--line);
+  box-shadow:0 -2px 10px rgba(0,0,0,.06);
+}
+.tabs button{
+  flex:1;padding:10px 4px 12px;border:none;background:none;
+  font-family:inherit;font-size:.78rem;color:var(--muted);
+  display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;
+}
+.tabs button.active{color:var(--navy);font-weight:700}
+.tabs button .tic{font-size:1.25rem;line-height:1}
+.tabs button.active .tic{transform:scale(1.08)}
+
+/* ── หัวข้อส่วน ── */
+.sec-head{
+  display:flex;align-items:center;justify-content:space-between;
+  margin:6px 0 12px;
+}
+.sec-head h2{
+  font-family:'Pridi',serif;font-size:1.1rem;color:var(--navy);font-weight:600;
+}
+.btn{
+  font-family:inherit;font-size:.9rem;font-weight:600;
+  padding:8px 16px;border-radius:8px;border:none;cursor:pointer;
+}
+.btn.primary{background:var(--navy);color:#fff}
+.btn.ghost{background:none;color:var(--navy);border:1px solid var(--navy)}
+.btn.danger{background:none;color:var(--red);border:1px solid #e3b6b8}
+.btn.small{padding:5px 12px;font-size:.82rem}
+
+/* ── ตัวกรองประเภท ── */
+.chips{display:flex;gap:7px;overflow-x:auto;padding-bottom:8px;margin-bottom:10px;-webkit-overflow-scrolling:touch}
+.chip{
+  flex-shrink:0;padding:5px 13px;border-radius:999px;
+  border:1px solid var(--line);background:#fff;color:var(--muted);
+  font-family:inherit;font-size:.83rem;font-weight:500;cursor:pointer;white-space:nowrap;
+}
+.chip.active{background:var(--navy);border-color:var(--navy);color:#fff;font-weight:600}
+
+/* ── การ์ด ── */
+.card{
+  background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  padding:14px 15px;margin-bottom:12px;
+  border-left:4px solid var(--navy);
+  position:relative;
+}
+.card.overdue{border-left-color:var(--red)}
+.card.soon{border-left-color:var(--amber)}
+.card.done-all{border-left-color:var(--green);opacity:.85}
+.card.past{opacity:.55}
+.card h3{font-size:1rem;font-weight:700;padding-right:60px}
+.meta{font-size:.86rem;color:var(--muted);margin-top:3px}
+.meta b{color:var(--ink);font-weight:600}
+.badge{
+  display:inline-block;font-size:.74rem;font-weight:600;
+  padding:2px 9px;border-radius:999px;margin-right:5px;margin-top:6px;
+  background:var(--navy-soft);color:var(--navy);
+}
+.badge.cat-1{background:#eee7f7;color:#5b3a8e}
+.badge.cat-2{background:#fdeee4;color:#a4501a}
+.badge.cat-3{background:#e4f1f7;color:#13647e}
+.badge.cat-4{background:#eef3e8;color:#4a6b22}
+.badge.cat-5{background:#f0f0f0;color:#555}
+.due{
+  position:absolute;top:13px;right:13px;
+  font-size:.76rem;font-weight:700;padding:3px 10px;border-radius:6px;
+}
+.due.late{background:var(--red-soft);color:var(--red)}
+.due.today{background:var(--red);color:#fff}
+.due.soon{background:var(--amber-soft);color:var(--amber)}
+.due.ok{background:var(--green-soft);color:var(--green)}
+
+/* ── รายการงานย่อย ── */
+.tasks{margin-top:10px;border-top:1px dashed var(--line);padding-top:9px}
+.tasks .t-label{font-size:.78rem;font-weight:700;color:var(--muted);letter-spacing:.3px;margin-bottom:4px}
+.task{display:flex;align-items:flex-start;gap:8px;padding:4px 0;font-size:.92rem}
+.task input[type=checkbox]{margin-top:4px;width:16px;height:16px;accent-color:var(--green);flex-shrink:0;cursor:pointer}
+.task.done span{text-decoration:line-through;color:var(--muted)}
+.task .del-t{margin-left:auto;border:none;background:none;color:#c9c2b4;cursor:pointer;font-size:.95rem;padding:0 4px}
+.add-task{display:flex;gap:6px;margin-top:7px}
+.add-task input{
+  flex:1;font-family:inherit;font-size:.88rem;padding:6px 10px;
+  border:1px solid var(--line);border-radius:7px;background:#fbfaf7;
+}
+.progress{height:5px;background:#eee9df;border-radius:99px;margin-top:10px;overflow:hidden}
+.progress i{display:block;height:100%;background:var(--green);border-radius:99px;transition:width .3s}
+
+.card-actions{display:flex;gap:8px;margin-top:11px;flex-wrap:wrap}
+
+/* ── ฟอร์ม ── */
+.overlay{
+  position:fixed;inset:0;background:rgba(20,28,42,.45);z-index:100;
+  display:flex;align-items:flex-end;justify-content:center;
+}
+@media(min-width:600px){.overlay{align-items:center}}
+.sheet{
+  background:#fff;width:100%;max-width:560px;max-height:88vh;overflow-y:auto;
+  border-radius:16px 16px 0 0;padding:20px 18px 26px;
+}
+@media(min-width:600px){.sheet{border-radius:14px}}
+.sheet h3{font-family:'Pridi',serif;color:var(--navy);font-size:1.1rem;margin-bottom:14px}
+.f-group{margin-bottom:12px}
+.f-group label{display:block;font-size:.84rem;font-weight:600;color:var(--muted);margin-bottom:4px}
+.f-group input,.f-group select,.f-group textarea{
+  width:100%;font-family:inherit;font-size:.95rem;padding:9px 11px;
+  border:1px solid var(--line);border-radius:8px;background:#fbfaf7;color:var(--ink);
+}
+.f-group textarea{resize:vertical;min-height:64px}
+.f-row{display:flex;gap:10px}
+.f-row .f-group{flex:1}
+.sheet-actions{display:flex;gap:10px;margin-top:16px}
+.sheet-actions .btn{flex:1;padding:11px}
+
+.empty{
+  text-align:center;color:var(--muted);padding:36px 16px;font-size:.92rem;
+  border:1.5px dashed var(--line);border-radius:var(--radius);background:#fbfaf7;
+}
+.hidden{display:none!important}
+.subtle{font-size:.8rem;color:var(--muted);margin-top:10px;text-align:center}
+.team-line{margin-top:5px;font-size:.86rem}
+.team-line .kp{
+  display:inline-block;background:#f1eee6;border:1px solid var(--line);
+  border-radius:999px;padding:1px 9px;font-size:.79rem;margin:2px 3px 0 0;font-weight:500;
+}
+.leader-tag{color:var(--gold);font-weight:700}
+.prio{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:7px;flex-shrink:0;margin-top:6px}
+.prio.g{background:#2e9e54}.prio.y{background:#e0a800}.prio.r{background:#d12f36}.prio.n{background:#2a6fb0}
+.cal-cell.hol{background:#fbe3e8}
+.cal-cell.hol.other{background:#fdf1f3}
+.click-card{cursor:pointer;transition:box-shadow .15s}
+.click-card:active{box-shadow:0 0 0 3px var(--gold)}
+.person-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(min-width:560px){.person-grid{grid-template-columns:1fr 1fr 1fr}}
+.person{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:13px;cursor:pointer;border-top:3px solid var(--gold);text-align:center}
+.person b{display:block;font-size:.97rem;color:var(--navy)}
+.person .meta{margin-top:4px}
+.person .nums{display:flex;justify-content:center;gap:12px;margin-top:8px}
+.person .nums span{font-size:1.25rem;font-weight:700;color:var(--navy);display:block;line-height:1.1}
+.person .nums small{font-size:.7rem;color:var(--muted)}
+.h-row{display:flex;align-items:flex-start;padding-right:62px}
+.h-row h3{padding-right:0;flex:1}
+.due.deadline{background:var(--red);color:#fff}
+.badge.sem{background:#fdf3dc;color:#9a6700;border:1px solid #ecd9a8}
+.badge.live{background:var(--green);color:#fff}
+.legend{font-size:.79rem;color:var(--muted);margin:-2px 0 10px}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin:0 4px 0 10px}
+.f-check{display:flex;align-items:center;gap:8px;font-size:.92rem;font-weight:500;padding:4px 0;cursor:pointer}
+.f-check input{width:17px;height:17px;accent-color:var(--red)}
+/* ── ปฏิทิน ── */
+.cal{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:12px}
+.cal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.cal-head b{font-family:'Pridi',serif;color:var(--navy);font-size:1rem}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cal-grid .dow{text-align:center;font-size:.72rem;color:var(--muted);padding:3px 0;font-weight:600}
+.cal-cell{aspect-ratio:1;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:.86rem;cursor:pointer;border:1.5px solid transparent;background:#fbfaf7}
+.cal-cell.other{color:#c8c2b4;background:none}
+.cal-cell.today{border-color:var(--gold);font-weight:700}
+.cal-cell.sel{background:var(--navy);color:#fff}
+.cal-dots{display:flex;gap:2px;height:5px;margin-top:2px}
+.cal-dots i{width:5px;height:5px;border-radius:50%;display:block}
+.dotk{display:inline-block;width:9px;height:9px;border-radius:50%;vertical-align:middle;margin-right:4px}
+.dash-h{font-family:'Pridi',serif;font-size:1rem;color:var(--navy);margin:16px 0 8px;font-weight:600}
+
+/* ── Google Drive Sync ── */
+.gdrive-bar{
+  display:flex;align-items:center;gap:10px;
+  background:#fff;border:1px solid var(--line);border-radius:var(--radius);
+  padding:10px 14px;margin-bottom:14px;flex-wrap:wrap;
+}
+.gdrive-bar .gd-status{font-size:.85rem;color:var(--muted);flex:1}
+.gdrive-bar .gd-status b{color:var(--ink)}
+.gdrive-bar .gd-status.ok{color:var(--green)}
+.gdrive-bar .gd-status.err{color:var(--red)}
+.btn.google{background:#fff;color:#3c4043;border:1px solid #dadce0;display:flex;align-items:center;gap:7px}
+.btn.google img{width:18px;height:18px}
+.btn.sync{background:var(--navy-soft);color:var(--navy);border:1px solid #c6d3e6}
+
+</style>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://apis.google.com/js/api.js" async defer></script>
+</head>
+<body>
+
+<header>
+  <h1>ระบบจัดการงานและการประชุม</h1>
+  <div class="today" id="todayLine"></div>
+</header>
+
+<div class="wrap">
+  <!-- Google Drive Sync Bar -->
+  <div class="gdrive-bar" id="gdriveBar">
+    <div class="gd-status" id="gdStatus">☁️ ยังไม่ได้เชื่อมต่อ Google Drive</div>
+    <button class="btn google small" id="btnSignIn" onclick="gdSignIn()">
+      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"> เชื่อมต่อ Google
+    </button>
+    <button class="btn sync small hidden" id="btnSync" onclick="gdSync()">☁️ Sync ทันที</button>
+    <button class="btn danger small hidden" id="btnSignOut" onclick="gdSignOut()">ออกจากระบบ</button>
+  </div>
+
+  <div class="alerts" id="alerts"></div>
+
+  <!-- ════ หน้าแดชบอร์ด ════ -->
+  <section id="page-dash">
+    <div class="sec-head"><h2>แดชบอร์ด</h2></div>
+    <div class="chips">
+      <button class="chip active" id="dchip-cal" onclick="setDash('cal')">📅 ปฏิทิน</button>
+      <button class="chip" id="dchip-prio" onclick="setDash('prio')">🚦 ความเร่งด่วน</button>
+      <button class="chip" id="dchip-leader" onclick="setDash('leader')">👤 ผู้สั่งการ</button>
+    </div>
+    <div id="dashBody"></div>
+    <div class="card" style="border-left-color:var(--gold);margin-top:16px">
+      <h3>🔐 สำรอง / กู้คืนข้อมูล</h3>
+      <div class="meta">กด "สำรองข้อมูล" แล้วคัดลอกเก็บไว้ (เช่น ในโน้ตมือถือหรืออีเมลตัวเอง) เป็นระยะ และ<b>ทุกครั้งก่อนเปิดแอปเวอร์ชันใหม่</b> — หากข้อมูลหาย ใช้ "กู้คืนข้อมูล" ได้ทันที</div>
+      <div class="card-actions">
+        <button class="btn primary small" onclick="openBackup()">สำรองข้อมูล (Export)</button>
+        <button class="btn ghost small" onclick="openRestore()">กู้คืนข้อมูล (Import)</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════ หน้าประชุม ════ -->
+  <section id="page-meet" class="hidden">
+    <div class="sec-head">
+      <h2>ประชุม / อบรม-สัมมนา</h2>
+      <button class="btn primary small" onclick="openMeetForm()">+ เพิ่ม</button>
+    </div>
+    <div id="meetList"></div>
+  </section>
+
+  <!-- ════ หน้างาน ════ -->
+  <section id="page-work" class="hidden">
+    <div class="sec-head">
+      <h2>งาน / สำนวน</h2>
+      <button class="btn primary small" onclick="openWorkForm()">+ เพิ่มงาน</button>
+    </div>
+    <div class="chips" id="catChips"></div>
+    <div class="legend">ความเร่งด่วน:<i style="background:#d12f36"></i>แดง = ด่วนที่สุด<i style="background:#e0a800"></i>เหลือง = เร่ง<i style="background:#2e9e54"></i>เขียว = ปกติ<i style="background:#2a6fb0"></i>น้ำเงิน = ไม่ระบุ</div>
+    <div id="workList"></div>
+  </section>
+
+  <!-- ════ หน้าแผนอนาคต ════ -->
+  <section id="page-plan" class="hidden">
+    <div class="sec-head">
+      <h2>แผนงานอนาคต</h2>
+      <button class="btn primary small" onclick="openPlanForm()">+ เพิ่มแผน</button>
+    </div>
+    <p class="meta" style="margin-bottom:12px">งานที่คาดว่าจะเกิดขึ้น เตรียมการล่วงหน้า — เมื่อเกิดขึ้นจริง กด "โอนเป็นงาน" ได้ทันที</p>
+    <div id="planList"></div>
+  </section>
+
+  <p class="subtle">ข้อมูลบันทึกอัตโนมัติในเครื่อง · อัปเดตล่าสุด <span id="savedAt">—</span></p>
+</div>
+
+<nav class="tabs">
+  <button id="tab-dash" class="active" onclick="showPage('dash')"><span class="tic">📊</span>แดชบอร์ด</button>
+  <button id="tab-meet" onclick="showPage('meet')"><span class="tic">📅</span>ประชุม</button>
+  <button id="tab-work" onclick="showPage('work')"><span class="tic">📁</span>งาน/สำนวน</button>
+  <button id="tab-plan" onclick="showPage('plan')"><span class="tic">🗓️</span>แผนอนาคต</button>
+</nav>
+
+<!-- ฟอร์ม (สร้างแบบไดนามิก) -->
+<div id="overlay" class="overlay hidden" onclick="if(event.target===this)closeSheet()">
+  <div class="sheet" id="sheet"></div>
+</div>
+
+<script>
+/* ─────────── ค่าคงที่ ─────────── */
+const CATS = [
+  {id:1,name:'สำนวนการสอบสวน'},
+  {id:2,name:'ความเห็นแย้งคำสั่งไม่ฟ้อง'},
+  {id:3,name:'ประชุมคดี / ข้อราชการ'},
+  {id:4,name:'งานบริหาร / ธุรการ'},
+  {id:5,name:'อื่น ๆ'}
+];
+const THM = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+const THD = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
+/* วันหยุดราชการ พ.ศ. 2569 (ตามมติ ครม.) */
+const HOLIDAYS = {
+  '2026-01-01':'วันขึ้นปีใหม่','2026-01-02':'วันหยุดพิเศษ (ต่อเนื่องปีใหม่)',
+  '2026-03-03':'วันมาฆบูชา','2026-04-06':'วันจักรี',
+  '2026-04-13':'วันสงกรานต์','2026-04-14':'วันสงกรานต์','2026-04-15':'วันสงกรานต์',
+  '2026-05-01':'วันแรงงานแห่งชาติ (เอกชน/รัฐวิสาหกิจ)','2026-05-04':'วันฉัตรมงคล','2026-05-13':'วันพืชมงคล',
+  '2026-05-31':'วันวิสาขบูชา','2026-06-01':'ชดเชยวันวิสาขบูชา','2026-06-02':'วันหยุดพิเศษ (มติ ครม.)',
+  '2026-06-03':'วันเฉลิมพระชนมพรรษา พระราชินี',
+  '2026-07-28':'วันเฉลิมพระชนมพรรษา ร.10','2026-07-29':'วันอาสาฬหบูชา','2026-07-30':'วันเข้าพรรษา',
+  '2026-08-12':'วันแม่แห่งชาติ','2026-10-13':'วันนวมินทรมหาราช','2026-10-23':'วันปิยมหาราช',
+  '2026-12-05':'วันพ่อแห่งชาติ / วันชาติ','2026-12-07':'ชดเชยวันพ่อแห่งชาติ',
+  '2026-12-10':'วันรัฐธรรมนูญ','2026-12-31':'วันสิ้นปี'
+};
+const KEY = 'legal-work-system-v1';
+
+let DB = {meetings:[], works:[], plans:[]};
+let activeCat = 0; // 0 = ทั้งหมด
+let uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+
+/* ─────────── วันที่ ─────────── */
+function fmtD(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function todayStr(){ return fmtD(new Date()); }
+function thDate(iso, withDay){
+  if(!iso) return '—';
+  const d = new Date(iso + (iso.length===10?'T00:00':''));
+  let s = `${d.getDate()} ${THM[d.getMonth()]} ${d.getFullYear()+543}`;
+  if(withDay) s = `วัน${THD[d.getDay()]} ` + s;
+  return s;
+}
+function daysUntil(iso){
+  if(!iso) return null;
+  const t = new Date(); t.setHours(0,0,0,0);
+  const d = new Date(iso+'T00:00');
+  return Math.round((d - t)/86400000);
+}
+function dueBadge(iso, dl){
+  const n = daysUntil(iso);
+  if(n===null) return '';
+  if(n<0)  return `<span class="due late">${dl?'เลยเส้นตาย':'เกินกำหนด'} ${-n} วัน</span>`;
+  if(n===0)return `<span class="due today">${dl?'เส้นตายวันนี้':'ครบกำหนดวันนี้'}</span>`;
+  if(dl)   return `<span class="due ${n<=7?'deadline':'soon'}">เส้นตาย อีก ${n} วัน</span>`;
+  if(n<=7) return `<span class="due soon">อีก ${n} วัน</span>`;
+  return `<span class="due ok">อีก ${n} วัน</span>`;
+}
+
+/* ─────────── Google Drive Storage ─────────── */
+const GD_CLIENT_ID = '494314919583-dm9vm2efedqs4jefgo0it3gga2lj0f6h.apps.googleusercontent.com';
+const GD_SCOPE = 'https://www.googleapis.com/auth/drive.appdata';
+const GD_FILENAME = 'worksystem-data.json';
+
+let gdToken = null;
+let gdFileId = null;
+let gdReady = false;
+let gdUser = '';
+
+function gdSetStatus(msg, cls=''){
+  const el = document.getElementById('gdStatus');
+  if(!el) return;
+  el.textContent = msg;
+  el.className = 'gd-status ' + cls;
+}
+
+function gdSignIn(){
+  const client = google.accounts.oauth2.initTokenClient({
+    client_id: GD_CLIENT_ID,
+    scope: GD_SCOPE,
+    callback: async (resp) => {
+      if(resp.error){ gdSetStatus('เชื่อมต่อไม่สำเร็จ: ' + resp.error, 'err'); return; }
+      gdToken = resp.access_token;
+      localStorage.setItem('gd_token', gdToken);
+      await gdInit();
+    }
+  });
+  client.requestAccessToken();
+}
+
+function gdSignOut(){
+  if(gdToken) google.accounts.oauth2.revoke(gdToken);
+  gdToken = null; gdFileId = null; gdReady = false;
+  localStorage.removeItem('gd_token');
+  document.getElementById('btnSignIn').classList.remove('hidden');
+  document.getElementById('btnSync').classList.add('hidden');
+  document.getElementById('btnSignOut').classList.add('hidden');
+  gdSetStatus('☁️ ยังไม่ได้เชื่อมต่อ Google Drive');
+}
+
+async function gdInit(){
+  gdSetStatus('⏳ กำลังเชื่อมต่อ...', '');
+  try {
+    // หาไฟล์ข้อมูลใน appDataFolder
+    const res = await fetch(
+      'https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&fields=files(id,name)&q=name%3D%27' + GD_FILENAME + '%27',
+      { headers: { Authorization: 'Bearer ' + gdToken } }
+    );
+    const data = await res.json();
+    if(data.files && data.files.length > 0){
+      gdFileId = data.files[0].id;
+      // โหลดข้อมูลจาก Drive
+      await gdLoad();
+    } else {
+      // ไฟล์ยังไม่มี — ใช้ข้อมูล local แล้ว save ขึ้น Drive
+      await gdSaveNow();
+    }
+    gdReady = true;
+    gdSetStatus('✅ เชื่อมต่อ Google Drive แล้ว', 'ok');
+    document.getElementById('btnSignIn').classList.add('hidden');
+    document.getElementById('btnSync').classList.remove('hidden');
+    document.getElementById('btnSignOut').classList.remove('hidden');
+  } catch(e) {
+    gdSetStatus('❌ เชื่อมต่อไม่สำเร็จ — ' + e.message, 'err');
+  }
+}
+
+async function gdLoad(){
+  const res = await fetch(
+    'https://www.googleapis.com/drive/v3/files/' + gdFileId + '?alt=media',
+    { headers: { Authorization: 'Bearer ' + gdToken } }
+  );
+  const text = await res.text();
+  try {
+    const obj = JSON.parse(text);
+    if(obj.meetings && obj.works && obj.plans){
+      DB = obj;
+      localStorage.setItem(KEY, JSON.stringify(DB));
+      renderAll();
+    }
+  } catch(e) { console.log('gdLoad parse error', e); }
+}
+
+async function gdSaveNow(){
+  const body = JSON.stringify(DB);
+  if(!gdFileId){
+    // สร้างไฟล์ใหม่
+    const meta = await fetch(
+      'https://www.googleapis.com/drive/v3/files',
+      {
+        method:'POST',
+        headers:{ Authorization:'Bearer '+gdToken, 'Content-Type':'application/json' },
+        body: JSON.stringify({ name: GD_FILENAME, parents: ['appDataFolder'] })
+      }
+    );
+    const mj = await meta.json();
+    gdFileId = mj.id;
+  }
+  // อัปเดตเนื้อหา
+  await fetch(
+    'https://www.googleapis.com/upload/drive/v3/files/' + gdFileId + '?uploadType=media',
+    {
+      method:'PATCH',
+      headers:{ Authorization:'Bearer '+gdToken, 'Content-Type':'application/json' },
+      body: body
+    }
+  );
+}
+
+async function gdSync(){
+  if(!gdToken || !gdReady){ alert('กรุณาเชื่อมต่อ Google Drive ก่อน'); return; }
+  gdSetStatus('⏳ กำลัง Sync...', '');
+  try {
+    await gdLoad();
+    await gdSaveNow();
+    gdSetStatus('✅ Sync เสร็จแล้ว ' + new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'}) + ' น.', 'ok');
+  } catch(e) {
+    gdSetStatus('❌ Sync ไม่สำเร็จ', 'err');
+  }
+}
+
+/* ─────────── จัดเก็บข้อมูล (localStorage + Drive) ─────────── */
+function load(){
+  try{
+    const r = localStorage.getItem(KEY);
+    if(r) DB = JSON.parse(r);
+  }catch(e){}
+  renderAll();
+  // พยายามเชื่อมต่อ Drive ด้วย token ที่เก็บไว้
+  const saved = localStorage.getItem('gd_token');
+  if(saved){
+    gdToken = saved;
+    gdInit().catch(()=>{
+      localStorage.removeItem('gd_token');
+      gdToken = null;
+    });
+  }
+}
+
+let saveTimer=null;
+function save(){
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async ()=>{
+    try{
+      localStorage.setItem(KEY, JSON.stringify(DB));
+      document.getElementById('savedAt').textContent =
+        new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'}) + ' น.';
+      // บันทึกขึ้น Drive ด้วยถ้าเชื่อมต่ออยู่
+      if(gdReady && gdToken){
+        await gdSaveNow();
+      }
+    }catch(e){
+      document.getElementById('savedAt').textContent = 'บันทึกไม่สำเร็จ';
+    }
+  }, 600);
+}
+
+/* ─────────── สลับหน้า ─────────── */
+function showPage(p){
+  ['dash','meet','work','plan'].forEach(x=>{
+    document.getElementById('page-'+x).classList.toggle('hidden', x!==p);
+    document.getElementById('tab-'+x).classList.toggle('active', x===p);
+  });
+  if(p==='dash') renderDash();
+}
+
+/* ─────────── แถบเตือน ─────────── */
+function renderAlerts(){
+  const box = document.getElementById('alerts');
+  const out = [];
+  // ประชุม / อบรมสัมมนา วันนี้-พรุ่งนี้ รวมถึงช่วงที่กำลังดำเนินอยู่
+  DB.meetings.forEach(m=>{
+    const ns = daysUntil(m.date);
+    const ne = m.dateEnd ? daysUntil(m.dateEnd) : ns;
+    const label = m.type==='sem' ? 'อบรม/สัมมนา' : 'ประชุม';
+    if(ns===0 && ne===ns)
+      out.push(`<div class="alert red"><span class="ic">🔔</span><span>${label}วันนี้ ${m.time?m.time+' น. — ':''}<b>${esc(m.title)}</b>${m.place?' ('+esc(m.place)+')':''}</span></div>`);
+    else if(ns<=0 && ne>=0)
+      out.push(`<div class="alert red"><span class="ic">🔔</span><span>${ns===0?'เริ่มวันนี้':'กำลังอยู่ในช่วง'}${label} — <b>${esc(m.title)}</b> (ถึง ${thDate(m.dateEnd)})</span></div>`);
+    else if(ns===1)
+      out.push(`<div class="alert amber"><span class="ic">📅</span><span>พรุ่งนี้มี${label} ${m.time?m.time+' น. — ':''}<b>${esc(m.title)}</b></span></div>`);
+  });
+  // งานเกินกำหนด / ใกล้กำหนด / เส้นตาย
+  DB.works.forEach(w=>{
+    if(allDone(w)) return;
+    const n = daysUntil(w.due);
+    if(n===null) return;
+    const dl = !!w.deadline;
+    if(n<0) out.push(`<div class="alert red"><span class="ic">⚠️</span><span><b>${esc(w.title)}</b> ${dl?'เลยเส้นตายมาแล้ว':'เกินกำหนดส่ง'} ${-n} วัน</span></div>`);
+    else if(n<=3 || (dl && n<=7)) out.push(`<div class="alert ${dl?'red':'amber'}"><span class="ic">${dl?'🚨':'⏳'}</span><span><b>${esc(w.title)}</b> ${dl?'เส้นตาย':'ครบกำหนดส่ง'}${n===0?'วันนี้':'ในอีก '+n+' วัน'} (${thDate(w.due)})</span></div>`);
+  });
+  if(!out.length && (DB.meetings.length||DB.works.length))
+    out.push(`<div class="alert blue"><span class="ic">✓</span><span>ไม่มีรายการเร่งด่วนในขณะนี้</span></div>`);
+  box.innerHTML = out.join('');
+}
+
+/* ─────────── ประชุม ─────────── */
+function renderMeetings(){
+  const box = document.getElementById('meetList');
+  if(!DB.meetings.length){
+    box.innerHTML = `<div class="empty">ยังไม่มีรายการประชุม<br>กด "+ เพิ่มประชุม" เพื่อเริ่มบันทึก</div>`;
+    return;
+  }
+  const sorted = [...DB.meetings].sort((a,b)=>(a.date+(a.time||''))<(b.date+(b.time||''))?-1:1);
+  box.innerHTML = sorted.map(m=>{
+    const ns = daysUntil(m.date);
+    const ne = m.dateEnd ? daysUntil(m.dateEnd) : ns;
+    const past = ne<0;
+    const ongoing = ns<=0 && ne>=0;
+    const cat = CATS.find(c=>c.id==m.cat);
+    const isSem = m.type==='sem';
+    return `<div class="card ${past?'past':(ne<=1?'soon':'')}" id="card-m-${m.id}">
+      ${ongoing?'<span class="due today">กำลังดำเนินอยู่</span>':(!past?dueBadge(m.date).replace('อีก 0 วัน','วันนี้'):'')}
+      <h3>${esc(m.title)}</h3>
+      <div class="meta">📅 <b>${thDate(m.date,true)}</b>${m.dateEnd&&m.dateEnd!==m.date?` ถึง <b>${thDate(m.dateEnd,true)}</b>`:''}${m.time?` เวลา <b>${m.time} น.</b>`:''}${m.place?` · 📍 ${esc(m.place)}`:''}</div>
+      ${m.chair?`<div class="meta">ประธาน/ผู้สั่งการ: <span class="leader-tag">${esc(m.chair)}</span></div>`:''}
+      ${m.coord?`<div class="meta">📞 ผู้ประสานงาน: <b>${esc(m.coord)}</b></div>`:''}
+      ${m.note?`<div class="meta">📝 ${esc(m.note)}</div>`:''}
+      ${isSem?`<span class="badge sem">อบรม/สัมมนา${m.dateEnd&&m.dateEnd!==m.date?' หลายวัน':''}</span>`:''}
+      ${cat?`<span class="badge cat-${cat.id}">${cat.name}</span>`:''}
+      <div class="card-actions">
+        <button class="btn ghost small" onclick="openMeetForm('${m.id}')">แก้ไข</button>
+        <button class="btn danger small" onclick="delMeet('${m.id}')">ลบ</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function openMeetForm(id){
+  const m = DB.meetings.find(x=>x.id===id) || {title:'',type:'meet',date:todayStr(),dateEnd:'',time:'',place:'',chair:'',coord:'',note:'',cat:3};
+  openSheet(`
+    <h3>${id?'แก้ไขรายการ':'เพิ่มประชุม / อบรม-สัมมนา'}</h3>
+    <div class="f-group"><label>หัวข้อ *</label><input id="f_title" value="${esc(m.title)}" placeholder="เช่น ประชุมพิจารณาสำนวนคดี... / อบรมหลักสูตร..."></div>
+    <div class="f-group"><label>ลักษณะ</label><select id="f_type">
+      <option value="meet" ${m.type!=='sem'?'selected':''}>ประชุม (วันเดียว)</option>
+      <option value="sem" ${m.type==='sem'?'selected':''}>อบรม/สัมมนา (อาจมีหลายวัน)</option>
+    </select></div>
+    <div class="f-row">
+      <div class="f-group"><label>วันที่เริ่ม *</label><input type="date" id="f_date" value="${m.date}"></div>
+      <div class="f-group"><label>วันสิ้นสุด <small>(ถ้ามีหลายวัน)</small></label><input type="date" id="f_dateend" value="${m.dateEnd||''}"></div>
+    </div>
+    <div class="f-group"><label>เวลา</label><input type="time" id="f_time" value="${m.time||''}"></div>
+    <div class="f-group"><label>สถานที่</label><input id="f_place" value="${esc(m.place||'')}" placeholder="ห้องประชุม / โรงแรม / ออนไลน์"></div>
+    <div class="f-group"><label>ประธาน / ผู้สั่งการ</label><input id="f_chair" value="${esc(m.chair||'')}"></div>
+    <div class="f-group"><label>ผู้ประสานงาน <small>(ชื่อ–เบอร์ติดต่อ)</small></label><input id="f_coord" value="${esc(m.coord||'')}" placeholder="เช่น คุณสมศรี 08x-xxx-xxxx"></div>
+    <div class="f-group"><label>ประเภทงาน</label><select id="f_cat">${CATS.map(c=>`<option value="${c.id}" ${c.id==m.cat?'selected':''}>${c.name}</option>`).join('')}</select></div>
+    <div class="f-group"><label>หมายเหตุ / วาระสำคัญ</label><textarea id="f_note">${esc(m.note||'')}</textarea></div>
+    <div class="sheet-actions">
+      <button class="btn ghost" onclick="closeSheet()">ยกเลิก</button>
+      <button class="btn primary" onclick="saveMeet('${id||''}')">บันทึก</button>
+    </div>`);
+}
+function saveMeet(id){
+  const title = gv('f_title'); if(!title){alert('กรุณาระบุหัวข้อ');return;}
+  let dateEnd = gv('f_dateend');
+  const date = gv('f_date')||todayStr();
+  if(dateEnd && dateEnd < date){alert('วันสิ้นสุดต้องไม่ก่อนวันเริ่ม');return;}
+  const obj = {id:id||uid(), title, type:gv('f_type'), date, dateEnd, time:gv('f_time'),
+               place:gv('f_place'), chair:gv('f_chair'), coord:gv('f_coord'), note:gv('f_note'), cat:gv('f_cat')};
+  if(id){ const i=DB.meetings.findIndex(x=>x.id===id); DB.meetings[i]=obj; }
+  else DB.meetings.push(obj);
+  closeSheet(); save(); renderAll();
+}
+function delMeet(id){
+  if(!confirm('ลบรายการประชุมนี้?')) return;
+  DB.meetings = DB.meetings.filter(x=>x.id!==id);
+  save(); renderAll();
+}
+
+/* ─────────── งาน / สำนวน ─────────── */
+function allDone(w){ return w.tasks.length>0 && w.tasks.every(t=>t.done); }
+function renderChips(){
+  const counts = {};
+  DB.works.forEach(w=>counts[w.cat]=(counts[w.cat]||0)+1);
+  document.getElementById('catChips').innerHTML =
+    `<button class="chip ${activeCat==0?'active':''}" onclick="setCat(0)">ทั้งหมด (${DB.works.length})</button>` +
+    CATS.map(c=>`<button class="chip ${activeCat==c.id?'active':''}" onclick="setCat(${c.id})">${c.name}${counts[c.id]?' ('+counts[c.id]+')':''}</button>`).join('');
+}
+function setCat(c){ activeCat=c; renderChips(); renderWorks(); }
+function renderWorks(){
+  const box = document.getElementById('workList');
+  let list = DB.works.filter(w=>activeCat==0 || w.cat==activeCat);
+  if(!list.length){
+    box.innerHTML = `<div class="empty">ยังไม่มีงานในหมวดนี้<br>กด "+ เพิ่มงาน" เพื่อเริ่มบันทึก</div>`;
+    return;
+  }
+  // เรียง: แดง → เหลือง → เขียว → น้ำเงิน(ไม่ระบุ) แล้วตามกำหนดส่งใกล้สุด · งานเสร็จแล้วอยู่ท้ายสุด
+  const PR = {r:0,y:1,g:2,n:3};
+  list.sort((a,b)=>{
+    const da=allDone(a)?1:0, db=allDone(b)?1:0;
+    if(da!==db) return da-db;
+    const pa=PR[a.prio]??3, pb=PR[b.prio]??3;
+    if(pa!==pb) return pa-pb;
+    const na=daysUntil(a.due), nb=daysUntil(b.due);
+    if(na===null&&nb===null) return 0;
+    if(na===null) return 1; if(nb===null) return -1;
+    return na-nb;
+  });
+  box.innerHTML = list.map(w=>{
+    const cat = CATS.find(c=>c.id==w.cat);
+    const doneT = w.tasks.filter(t=>t.done), todoT = w.tasks.filter(t=>!t.done);
+    const pct = w.tasks.length? Math.round(doneT.length/w.tasks.length*100) : 0;
+    const n = daysUntil(w.due);
+    const prio = w.prio||'n';
+    const cls = allDone(w)?'done-all':(prio==='r'||(n!==null&&n<0)?'overdue':(prio==='y'||(n!==null&&n<=7)?'soon':''));
+    const kps = (w.team||'').split(',').map(s=>s.trim()).filter(Boolean);
+    return `<div class="card ${cls}" id="card-w-${w.id}">
+      ${!allDone(w)?dueBadge(w.due, w.deadline):'<span class="due ok">เสร็จสมบูรณ์</span>'}
+      <div class="h-row"><span class="prio ${prio}" title="ความเร่งด่วน"></span><h3>${esc(w.title)}</h3></div>
+      ${w.caseno?`<div class="meta">เลขสำนวน/เรื่อง: <b>${esc(w.caseno)}</b></div>`:''}
+      <div class="meta">หัวหน้าผู้สั่งการ: <span class="leader-tag">${esc(w.leader||'—')}</span></div>
+      ${kps.length?`<div class="team-line">ทีมงาน (คีย์แมน): ${kps.map(k=>`<span class="kp">${esc(k)}</span>`).join('')}</div>`:''}
+      ${w.coord?`<div class="meta">📞 ผู้ประสานงาน: <b>${esc(w.coord)}</b></div>`:''}
+      ${w.due?`<div class="meta">${w.deadline?'🚨 <b style="color:var(--red)">เส้นตาย (deadline)</b>':'กำหนดส่ง'}: <b>${thDate(w.due,true)}</b></div>`:''}
+      ${cat?`<span class="badge cat-${cat.id}">${cat.name}</span>`:''}
+      ${w.tasks.length?`<div class="progress"><i style="width:${pct}%"></i></div>`:''}
+      <div class="tasks">
+        ${todoT.length?`<div class="t-label">สิ่งที่ต้องทำ (${todoT.length})</div>`+todoT.map(t=>taskRow(w.id,t)).join(''):''}
+        ${doneT.length?`<div class="t-label" style="margin-top:6px">ทำเสร็จแล้ว (${doneT.length})</div>`+doneT.map(t=>taskRow(w.id,t)).join(''):''}
+        <div class="add-task">
+          <input id="nt_${w.id}" placeholder="เพิ่มรายการที่ต้องทำ..." onkeydown="if(event.key==='Enter')addTask('${w.id}')">
+          <button class="btn ghost small" onclick="addTask('${w.id}')">เพิ่ม</button>
+        </div>
+      </div>
+      <div class="card-actions">
+        <button class="btn ghost small" onclick="openWorkForm('${w.id}')">แก้ไขข้อมูลงาน</button>
+        <button class="btn danger small" onclick="delWork('${w.id}')">ลบ</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function taskRow(wid,t){
+  return `<div class="task ${t.done?'done':''}">
+    <input type="checkbox" ${t.done?'checked':''} onchange="toggleTask('${wid}','${t.id}')">
+    <span>${esc(t.text)}</span>
+    <button class="del-t" title="ลบ" onclick="delTask('${wid}','${t.id}')">✕</button>
+  </div>`;
+}
+function addTask(wid){
+  const inp = document.getElementById('nt_'+wid);
+  const v = inp.value.trim(); if(!v) return;
+  const w = DB.works.find(x=>x.id===wid);
+  w.tasks.push({id:uid(), text:v, done:false});
+  save(); renderWorks(); renderAlerts();
+  const ni = document.getElementById('nt_'+wid); if(ni) ni.focus();
+}
+function toggleTask(wid,tid){
+  const w = DB.works.find(x=>x.id===wid);
+  const t = w.tasks.find(x=>x.id===tid);
+  t.done = !t.done;
+  save(); renderWorks(); renderAlerts();
+}
+function delTask(wid,tid){
+  const w = DB.works.find(x=>x.id===wid);
+  w.tasks = w.tasks.filter(x=>x.id!==tid);
+  save(); renderWorks();
+}
+function openWorkForm(id){
+  const w = DB.works.find(x=>x.id===id) || {title:'',caseno:'',leader:'',team:'',coord:'',due:'',deadline:false,prio:'n',cat:1};
+  openSheet(`
+    <h3>${id?'แก้ไขข้อมูลงาน':'เพิ่มงานใหม่'}</h3>
+    <div class="f-group"><label>ชื่องาน / เรื่อง *</label><input id="f_title" value="${esc(w.title)}" placeholder="เช่น ทำความเห็นแย้งคดี..."></div>
+    <div class="f-group"><label>เลขสำนวน / เลขเรื่อง</label><input id="f_caseno" value="${esc(w.caseno||'')}"></div>
+    <div class="f-group"><label>ประเภทงาน *</label><select id="f_cat">${CATS.map(c=>`<option value="${c.id}" ${c.id==w.cat?'selected':''}>${c.name}</option>`).join('')}</select></div>
+    <div class="f-group"><label>ความเร่งด่วน</label><select id="f_prio">
+      <option value="n" ${w.prio==='n'||!w.prio?'selected':''}>🔵 น้ำเงิน — ไม่ระบุความเร่งด่วน</option>
+      <option value="g" ${w.prio==='g'?'selected':''}>🟢 เขียว — ปกติ</option>
+      <option value="y" ${w.prio==='y'?'selected':''}>🟡 เหลือง — เร่ง</option>
+      <option value="r" ${w.prio==='r'?'selected':''}>🔴 แดง — ด่วนที่สุด</option>
+    </select></div>
+    <div class="f-group"><label>หัวหน้าผู้สั่งการ</label><input id="f_leader" value="${esc(w.leader||'')}"></div>
+    <div class="f-group"><label>ทีมงาน / คีย์แมน <small>(คั่นด้วยเครื่องหมายจุลภาค ,)</small></label><input id="f_team" value="${esc(w.team||'')}" placeholder="เช่น พ.ต.ท.สมชาย, ร.ต.อ.สมหญิง"></div>
+    <div class="f-group"><label>ผู้ประสานงาน <small>(ชื่อ–เบอร์ติดต่อ)</small></label><input id="f_coord" value="${esc(w.coord||'')}" placeholder="เช่น คุณสมศรี 08x-xxx-xxxx"></div>
+    <div class="f-group"><label>กำหนดเวลาส่ง</label><input type="date" id="f_due" value="${w.due||''}"></div>
+    <div class="f-group"><label class="f-check"><input type="checkbox" id="f_deadline" ${w.deadline?'checked':''}> เป็นเส้นตาย (deadline) เลื่อนไม่ได้</label></div>
+    <div class="sheet-actions">
+      <button class="btn ghost" onclick="closeSheet()">ยกเลิก</button>
+      <button class="btn primary" onclick="saveWork('${id||''}')">บันทึก</button>
+    </div>`);
+}
+function saveWork(id){
+  const title = gv('f_title'); if(!title){alert('กรุณาระบุชื่องาน');return;}
+  const dl = document.getElementById('f_deadline').checked;
+  const fields = {title,caseno:gv('f_caseno'),leader:gv('f_leader'),team:gv('f_team'),coord:gv('f_coord'),
+                  due:gv('f_due'),deadline:dl,prio:gv('f_prio'),cat:gv('f_cat')};
+  if(id){
+    const w = DB.works.find(x=>x.id===id);
+    Object.assign(w, fields);
+  } else {
+    DB.works.push({id:uid(), ...fields, tasks:[]});
+  }
+  closeSheet(); save(); renderAll();
+}
+function delWork(id){
+  if(!confirm('ลบงานนี้ทั้งหมด (รวมรายการย่อย)?')) return;
+  DB.works = DB.works.filter(x=>x.id!==id);
+  save(); renderAll();
+}
+
+/* ─────────── แผนอนาคต ─────────── */
+function renderPlans(){
+  const box = document.getElementById('planList');
+  if(!DB.plans.length){
+    box.innerHTML = `<div class="empty">ยังไม่มีแผนงานล่วงหน้า<br>บันทึกงานที่คาดว่าจะเกิดขึ้น เพื่อเตรียมทีมงานและเวลาไว้ก่อน</div>`;
+    return;
+  }
+  box.innerHTML = DB.plans.map(p=>{
+    const cat = CATS.find(c=>c.id==p.cat);
+    return `<div class="card" style="border-left-color:var(--gold)">
+      <h3>${esc(p.title)}</h3>
+      ${p.expect?`<div class="meta">ช่วงเวลาที่คาดว่าจะเกิด: <b>${esc(p.expect)}</b></div>`:''}
+      ${p.prep?`<div class="meta">การเตรียมการ: ${esc(p.prep)}</div>`:''}
+      ${cat?`<span class="badge cat-${cat.id}">${cat.name}</span>`:''}
+      <div class="card-actions">
+        <button class="btn primary small" onclick="planToWork('${p.id}')">โอนเป็นงาน →</button>
+        <button class="btn ghost small" onclick="openPlanForm('${p.id}')">แก้ไข</button>
+        <button class="btn danger small" onclick="delPlan('${p.id}')">ลบ</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function openPlanForm(id){
+  const p = DB.plans.find(x=>x.id===id) || {title:'',expect:'',prep:'',cat:1};
+  openSheet(`
+    <h3>${id?'แก้ไขแผนงาน':'เพิ่มแผนงานอนาคต'}</h3>
+    <div class="f-group"><label>ชื่องานที่คาดว่าจะเกิดขึ้น *</label><input id="f_title" value="${esc(p.title)}"></div>
+    <div class="f-group"><label>ช่วงเวลาที่คาดว่าจะเกิด</label><input id="f_expect" value="${esc(p.expect||'')}" placeholder="เช่น ปลายเดือน มิ.ย. / ไตรมาส 3"></div>
+    <div class="f-group"><label>ประเภทงาน</label><select id="f_cat">${CATS.map(c=>`<option value="${c.id}" ${c.id==p.cat?'selected':''}>${c.name}</option>`).join('')}</select></div>
+    <div class="f-group"><label>การเตรียมการล่วงหน้า</label><textarea id="f_prep" placeholder="เช่น เตรียมทีมงาน รวบรวมเอกสาร ประสานหน่วยงาน">${esc(p.prep||'')}</textarea></div>
+    <div class="sheet-actions">
+      <button class="btn ghost" onclick="closeSheet()">ยกเลิก</button>
+      <button class="btn primary" onclick="savePlan('${id||''}')">บันทึก</button>
+    </div>`);
+}
+function savePlan(id){
+  const title = gv('f_title'); if(!title){alert('กรุณาระบุชื่องาน');return;}
+  const obj = {id:id||uid(), title, expect:gv('f_expect'), prep:gv('f_prep'), cat:gv('f_cat')};
+  if(id){ const i=DB.plans.findIndex(x=>x.id===id); DB.plans[i]=obj; }
+  else DB.plans.push(obj);
+  closeSheet(); save(); renderAll();
+}
+function delPlan(id){
+  if(!confirm('ลบแผนงานนี้?')) return;
+  DB.plans = DB.plans.filter(x=>x.id!==id);
+  save(); renderAll();
+}
+function planToWork(id){
+  const p = DB.plans.find(x=>x.id===id);
+  DB.works.push({id:uid(), title:p.title, caseno:'', leader:'', team:'', coord:'', due:'', deadline:false, prio:'g', cat:p.cat,
+                 tasks: p.prep? p.prep.split('\n').map(s=>s.trim()).filter(Boolean).map(s=>({id:uid(),text:s,done:false})) : []});
+  DB.plans = DB.plans.filter(x=>x.id!==id);
+  save(); renderAll(); showPage('work');
+}
+
+/* ─────────── แดชบอร์ด ─────────── */
+let dashView = 'cal';
+let calRef = (()=>{ const d=new Date(); d.setDate(1); d.setHours(0,0,0,0); return d; })();
+let calSel = todayStr();
+
+function setDash(v){ dashView=v; renderDash(); }
+function renderDash(){
+  ['cal','prio','leader'].forEach(v=>{
+    const el=document.getElementById('dchip-'+v);
+    if(el) el.classList.toggle('active', dashView===v);
+  });
+  const body=document.getElementById('dashBody');
+  if(!body) return;
+  body.innerHTML = dashView==='cal' ? calHTML() : (dashView==='prio' ? prioHTML() : leaderHTML());
+}
+
+function eventMap(){
+  const map={};
+  const add=(ds,e)=>{ (map[ds]=map[ds]||[]).push(e); };
+  DB.meetings.forEach(m=>{
+    let d=new Date(m.date+'T00:00');
+    const end=new Date((m.dateEnd||m.date)+'T00:00');
+    let guard=0;
+    while(d<=end && guard<120){ add(fmtD(d), {k:'meet',m}); d.setDate(d.getDate()+1); guard++; }
+  });
+  DB.works.forEach(w=>{ if(w.due && !allDone(w)) add(w.due, {k:'due',w}); });
+  return map;
+}
+
+function calHTML(){
+  const map=eventMap();
+  const y=calRef.getFullYear(), mo=calRef.getMonth();
+  const startDow=(new Date(y,mo,1).getDay()+6)%7; // เริ่มสัปดาห์วันจันทร์
+  const start=new Date(y,mo,1-startDow);
+  const tStr=todayStr();
+  let grid=['จ','อ','พ','พฤ','ศ','ส','อา'].map(x=>`<div class="dow">${x}</div>`).join('');
+  for(let i=0;i<42;i++){
+    const d=new Date(start); d.setDate(start.getDate()+i);
+    const ds=fmtD(d);
+    const ev=map[ds]||[];
+    const isHol = d.getDay()===0 || d.getDay()===6 || HOLIDAYS[ds];
+    const dots=ev.slice(0,3).map(e=>`<i style="background:${ds===calSel?'#fff':(e.k==='meet'?'var(--navy)':'var(--red)')}"></i>`).join('');
+    grid+=`<div class="cal-cell ${d.getMonth()!==mo?'other':''} ${isHol?'hol':''} ${ds===tStr?'today':''} ${ds===calSel?'sel':''}" onclick="calSel='${ds}';renderDash()"><span>${d.getDate()}</span><span class="cal-dots">${dots}</span></div>`;
+  }
+  const sel=map[calSel]||[];
+  const holCard = HOLIDAYS[calSel] ? `<div class="card" style="border-left-color:#d4708a;background:#fdf4f6;margin-bottom:8px"><div class="meta">🎌 วันหยุดราชการ: <b>${HOLIDAYS[calSel]}</b></div></div>` : '';
+  const list = sel.length ? sel.map(e=>{
+    if(e.k==='meet'){
+      const m=e.m;
+      return `<div class="card click-card" style="margin-bottom:8px" onclick="gotoItem('m','${m.id}')"><h3 style="font-size:.95rem">${esc(m.title)}</h3>
+        <div class="meta">${m.type==='sem'?'อบรม/สัมมนา':'ประชุม'}${m.time?' · '+m.time+' น.':''}${m.place?' · 📍 '+esc(m.place):''}${m.chair?' · สั่งการ: '+esc(m.chair):''} <b style="color:var(--navy)">› ดูรายละเอียด</b></div></div>`;
+    }
+    const w=e.w;
+    return `<div class="card click-card ${w.deadline?'overdue':'soon'}" style="margin-bottom:8px" onclick="gotoItem('w','${w.id}')">
+      <div class="h-row" style="padding-right:0"><span class="prio ${w.prio||'n'}"></span><h3 style="font-size:.95rem">${esc(w.title)}</h3></div>
+      <div class="meta">${w.deadline?'🚨 เส้นตาย':'กำหนดส่ง'}${w.leader?' · สั่งการ: '+esc(w.leader):''} <b style="color:var(--navy)">› ดูรายละเอียด</b></div></div>`;
+  }).join('') : (holCard?'':`<div class="empty" style="padding:18px">ไม่มีรายการในวันที่เลือก</div>`);
+  return `<div class="cal">
+    <div class="cal-head">
+      <button class="btn ghost small" onclick="calMove(-1)">‹ เดือนก่อน</button>
+      <b>${THM[mo]} ${y+543}</b>
+      <button class="btn ghost small" onclick="calMove(1)">เดือนถัดไป ›</button>
+    </div>
+    <div class="cal-grid">${grid}</div>
+    <div class="meta" style="margin-top:9px"><span class="dotk" style="background:var(--navy)"></span>ประชุม/สัมมนา &nbsp;<span class="dotk" style="background:var(--red)"></span>กำหนดส่ง/เส้นตาย &nbsp;<span class="dotk" style="background:#fbe3e8;border:1px solid #e8b9c4"></span>วันหยุด &nbsp;กรอบทอง = วันนี้</div>
+  </div>
+  <div class="dash-h">รายการ ${thDate(calSel,true)}</div>
+  ${holCard}${list}`;
+}
+function calMove(d){ calRef.setMonth(calRef.getMonth()+d); renderDash(); }
+
+/* คลิกจากแดชบอร์ดเด้งไปหน้ารายละเอียด */
+function gotoItem(kind,id){
+  if(kind==='m'){ showPage('meet'); }
+  else { activeCat=0; renderChips(); renderWorks(); showPage('work'); }
+  setTimeout(()=>{
+    const el=document.getElementById('card-'+kind+'-'+id);
+    if(el){
+      el.scrollIntoView({behavior:'smooth',block:'center'});
+      el.style.boxShadow='0 0 0 3px var(--gold)';
+      setTimeout(()=>{ el.style.boxShadow=''; }, 2000);
+    }
+  }, 120);
+}
+
+function miniWorkRow(w){
+  return `<div class="card click-card" style="margin-bottom:8px" onclick="gotoItem('w','${w.id}')">
+    <div class="h-row" style="padding-right:0"><span class="prio ${w.prio||'n'}"></span><h3 style="font-size:.95rem">${esc(w.title)}</h3></div>
+    <div class="meta">${w.leader?'สั่งการ: <b>'+esc(w.leader)+'</b>':''}${w.due?` · ${w.deadline?'🚨 เส้นตาย':'ส่ง'} ${thDate(w.due)}`:''}${w.tasks.length?` · เสร็จ ${w.tasks.filter(t=>t.done).length}/${w.tasks.length}`:''} <b style="color:var(--navy)">› ดูรายละเอียด</b></div>
+  </div>`;
+}
+function prioHTML(){
+  const g={r:[],y:[],g:[],n:[]};
+  DB.works.forEach(w=>{ if(!allDone(w)) g[w.prio&&g[w.prio]?w.prio:'n'].push(w); });
+  const byDue=(a,b)=>{ const na=daysUntil(a.due), nb=daysUntil(b.due);
+    if(na===null&&nb===null)return 0; if(na===null)return 1; if(nb===null)return -1; return na-nb; };
+  const sec=(key,name,color)=>{
+    const arr=g[key].sort(byDue);
+    return `<div class="dash-h"><span class="dotk" style="background:${color}"></span>${name} (${arr.length} งาน)</div>`+
+      (arr.length? arr.map(miniWorkRow).join('') : `<div class="empty" style="padding:14px;margin-bottom:8px">ไม่มีงานในกลุ่มนี้</div>`);
+  };
+  return sec('r','แดง — ด่วนที่สุด','#d12f36') + sec('y','เหลือง — เร่ง','#e0a800')
+       + sec('g','เขียว — ปกติ','#2e9e54') + sec('n','น้ำเงิน — งานไม่ระบุความเร่งด่วน','#2a6fb0');
+}
+
+let leaderSel = null;
+function leaderKey(s){
+  // โฟกัสชื่อแรก: "รองเช่ รองหวาน" → "รองเช่"
+  const t=(s||'').trim();
+  if(!t) return '(ไม่ระบุผู้สั่งการ)';
+  return t.split(/[,/]+/)[0].trim().split(/\s+/)[0];
+}
+function leaderData(){
+  const map={};
+  const get=k=>map[k]=map[k]||{w:[],m:[]};
+  DB.works.forEach(w=>{ if(!allDone(w)) get(leaderKey(w.leader)).w.push(w); });
+  DB.meetings.forEach(m=>{
+    const ne=daysUntil(m.dateEnd||m.date);
+    if(ne!==null && ne>=0) get(leaderKey(m.chair)).m.push(m);
+  });
+  return map;
+}
+function leaderHTML(){
+  const map=leaderData();
+  const keys=Object.keys(map).sort((a,b)=>(map[b].w.length+map[b].m.length)-(map[a].w.length+map[a].m.length));
+  if(!keys.length) return `<div class="empty">ยังไม่มีงานหรือประชุมที่ค้างอยู่</div>`;
+
+  // หน้ารายละเอียดรายบุคคล
+  if(leaderSel && map[leaderSel]){
+    const d=map[leaderSel];
+    return `<button class="btn ghost small" onclick="leaderSel=null;renderDash()" style="margin-bottom:10px">‹ กลับไปรายชื่อทั้งหมด</button>
+      <div class="card" style="border-left-color:var(--gold)">
+        <h3 style="padding-right:0">👤 <span class="leader-tag">${esc(leaderSel)}</span></h3>
+        <div class="meta">งานค้าง ${d.w.length} · ประชุม/สัมมนาที่จะถึง ${d.m.length}</div>
+      </div>
+      ${d.w.length?`<div class="dash-h">งานที่สั่งการ (${d.w.length})</div>`+d.w.map(miniWorkRow).join(''):''}
+      ${d.m.length?`<div class="dash-h">ประชุม/สัมมนา (${d.m.length})</div>`+d.m.map(m=>
+        `<div class="card click-card" style="margin-bottom:8px" onclick="gotoItem('m','${m.id}')">
+          <h3 style="font-size:.95rem">${esc(m.title)}</h3>
+          <div class="meta">📅 ${thDate(m.date,true)}${m.time?' '+m.time+' น.':''}${m.place?' · 📍 '+esc(m.place):''} <b style="color:var(--navy)">› ดูรายละเอียด</b></div>
+        </div>`).join(''):''}`;
+  }
+  if(leaderSel) leaderSel=null;
+
+  // dashboard ย่อย: การ์ดรายชื่อผู้สั่งการ
+  return `<div class="person-grid">`+keys.map(k=>{
+    const d=map[k];
+    const worst = d.w.some(w=>w.prio==='r')?'r':(d.w.some(w=>w.prio==='y')?'y':(d.w.some(w=>w.prio==='g')?'g':'n'));
+    return `<div class="person" onclick="leaderSel='${esc(k).replace(/'/g,"\\'")}';renderDash()">
+      <b><span class="prio ${worst}" style="width:9px;height:9px;margin:0 5px 0 0"></span>${esc(k)}</b>
+      <div class="nums">
+        <div><span>${d.w.length}</span><small>งานค้าง</small></div>
+        <div><span>${d.m.length}</span><small>ประชุม</small></div>
+      </div>
+      <div class="meta" style="margin-top:8px;color:var(--navy);font-weight:600">แตะเพื่อดูรายการ ›</div>
+    </div>`;
+  }).join('')+`</div>`;
+}
+
+/* ─────────── สำรอง / กู้คืนข้อมูล ─────────── */
+function openBackup(){
+  const data=JSON.stringify(DB);
+  openSheet(`<h3>สำรองข้อมูล (Export)</h3>
+    <p class="meta" style="margin-bottom:8px">กด "คัดลอกทั้งหมด" แล้วนำไปวางเก็บไว้ในที่ปลอดภัย เช่น แอปโน้ตในมือถือ หรือส่งอีเมลถึงตัวเอง — ข้อความนี้คือข้อมูลทั้งระบบ ใช้กู้คืนได้ทุกเมื่อ</p>
+    <textarea id="bk_text" readonly style="width:100%;min-height:200px;font-family:monospace;font-size:.74rem;border:1px solid var(--line);border-radius:8px;padding:8px">${esc(data)}</textarea>
+    <div class="sheet-actions">
+      <button class="btn ghost" onclick="closeSheet()">ปิด</button>
+      <button class="btn primary" onclick="copyBackup()">คัดลอกทั้งหมด</button>
+    </div>`);
+}
+function copyBackup(){
+  const ta=document.getElementById('bk_text');
+  ta.focus(); ta.select(); ta.setSelectionRange(0, ta.value.length);
+  const done=()=>alert('คัดลอกแล้ว — นำไปวางเก็บไว้ในโน้ตหรืออีเมลของคุณ');
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(ta.value).then(done).catch(()=>{ document.execCommand('copy'); done(); });
+  } else { document.execCommand('copy'); done(); }
+}
+function openRestore(){
+  openSheet(`<h3>กู้คืนข้อมูล (Import)</h3>
+    <p class="meta" style="margin-bottom:8px">วางข้อความสำรองที่เคยคัดลอกไว้ลงในช่องด้านล่าง แล้วกด "กู้คืนข้อมูล" — ข้อมูลปัจจุบันในระบบจะถูกแทนที่ทั้งหมด</p>
+    <textarea id="rs_text" style="width:100%;min-height:200px;font-family:monospace;font-size:.74rem;border:1px solid var(--line);border-radius:8px;padding:8px" placeholder='วางข้อความที่ขึ้นต้นด้วย {"meetings":... ที่นี่'></textarea>
+    <div class="sheet-actions">
+      <button class="btn ghost" onclick="closeSheet()">ยกเลิก</button>
+      <button class="btn primary" onclick="doRestore()">กู้คืนข้อมูล</button>
+    </div>`);
+}
+function doRestore(){
+  try{
+    const obj=JSON.parse(document.getElementById('rs_text').value.trim());
+    if(!obj || !Array.isArray(obj.meetings) || !Array.isArray(obj.works) || !Array.isArray(obj.plans)) throw 0;
+    DB=obj; save(); renderAll();
+    closeSheet(); alert('กู้คืนข้อมูลเรียบร้อยแล้ว');
+  }catch(e){ alert('ข้อมูลไม่ถูกต้อง — กรุณาตรวจสอบว่าวางข้อความสำรองครบถ้วนทั้งหมด'); }
+}
+
+/* ─────────── เครื่องมือร่วม ─────────── */
+function gv(id){ return (document.getElementById(id)?.value||'').trim(); }
+function esc(s){ return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function openSheet(html){
+  document.getElementById('sheet').innerHTML = html;
+  document.getElementById('overlay').classList.remove('hidden');
+}
+function closeSheet(){ document.getElementById('overlay').classList.add('hidden'); }
+function renderAll(){
+  renderAlerts(); renderMeetings(); renderChips(); renderWorks(); renderPlans(); renderDash();
+}
+
+/* ─────────── เริ่มต้น ─────────── */
+const now = new Date();
+document.getElementById('todayLine').textContent =
+  `วันนี้ วัน${THD[now.getDay()]}ที่ ${now.getDate()} ${THM[now.getMonth()]} ${now.getFullYear()+543}`;
+load();
+</script>
+</body>
+</html>
