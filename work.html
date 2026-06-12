@@ -232,17 +232,15 @@ header .today{font-size:.85rem;opacity:.85;margin-top:2px}
   background:#fff;border:1px solid var(--line);border-radius:var(--radius);
   padding:10px 14px;margin-bottom:14px;flex-wrap:wrap;
 }
-.gdrive-bar .gd-status{font-size:.85rem;color:var(--muted);flex:1}
-.gdrive-bar .gd-status b{color:var(--ink)}
-.gdrive-bar .gd-status.ok{color:var(--green)}
-.gdrive-bar .gd-status.err{color:var(--red)}
+.gdrive-bar .gd-status{font-size:.85rem;color:var(--muted);flex:1;min-width:160px}
+.gdrive-bar .gd-status.ok{color:var(--green);font-weight:600}
+.gdrive-bar .gd-status.err{color:var(--red);font-weight:600}
 .btn.google{background:#fff;color:#3c4043;border:1px solid #dadce0;display:flex;align-items:center;gap:7px}
 .btn.google img{width:18px;height:18px}
 .btn.sync{background:var(--navy-soft);color:var(--navy);border:1px solid #c6d3e6}
 
 </style>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
-<script src="https://apis.google.com/js/api.js" async defer></script>
 </head>
 <body>
 
@@ -258,7 +256,7 @@ header .today{font-size:.85rem;opacity:.85;margin-top:2px}
     <button class="btn google small" id="btnSignIn" onclick="gdSignIn()">
       <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"> เชื่อมต่อ Google
     </button>
-    <button class="btn sync small hidden" id="btnSync" onclick="gdSync()">☁️ Sync ทันที</button>
+    <button class="btn sync small hidden" id="btnSync" onclick="gdSync(true)">☁️ Sync ทันที</button>
     <button class="btn danger small hidden" id="btnSignOut" onclick="gdSignOut()">ออกจากระบบ</button>
   </div>
 
@@ -384,15 +382,17 @@ function dueBadge(iso, dl){
   return `<span class="due ok">อีก ${n} วัน</span>`;
 }
 
-/* ─────────── Google Drive Storage ─────────── */
+/* ═══════════ Google Drive Sync (v2 — token auto-refresh + timestamp merge) ═══════════ */
 const GD_CLIENT_ID = '494314919583-dm9vm2efedqs4jefgo0it3gga2lj0f6h.apps.googleusercontent.com';
 const GD_SCOPE = 'https://www.googleapis.com/auth/drive.appdata';
 const GD_FILENAME = 'worksystem-data.json';
 
-let gdToken = null;
-let gdFileId = null;
-let gdReady = false;
-let gdUser = '';
+let gdToken = null;        // access token ปัจจุบัน
+let gdTokenExp = 0;        // เวลาหมดอายุ (epoch ms)
+let gdFileId = localStorage.getItem('gd_fileid') || null;
+let gdConnected = localStorage.getItem('gd_connected') === '1'; // เคยเชื่อมต่อสำเร็จ
+let gdTokenClient = null;
+let gdBusy = false;
 
 function gdSetStatus(msg, cls=''){
   const el = document.getElementById('gdStatus');
@@ -400,111 +400,154 @@ function gdSetStatus(msg, cls=''){
   el.textContent = msg;
   el.className = 'gd-status ' + cls;
 }
+function gdShowButtons(connected){
+  document.getElementById('btnSignIn').classList.toggle('hidden', connected);
+  document.getElementById('btnSync').classList.toggle('hidden', !connected);
+  document.getElementById('btnSignOut').classList.toggle('hidden', !connected);
+}
 
-function gdSignIn(){
-  const client = google.accounts.oauth2.initTokenClient({
-    client_id: GD_CLIENT_ID,
-    scope: GD_SCOPE,
-    callback: async (resp) => {
-      if(resp.error){ gdSetStatus('เชื่อมต่อไม่สำเร็จ: ' + resp.error, 'err'); return; }
+/* ── ขอ token: silent ก่อน ถ้าไม่ได้ค่อยเด้งหน้าล็อกอิน ── */
+function gdGetToken(interactive){
+  return new Promise((resolve, reject)=>{
+    if(gdToken && Date.now() < gdTokenExp - 60000){ resolve(gdToken); return; } // ยังไม่หมดอายุ (เผื่อ 1 นาที)
+    if(typeof google === 'undefined' || !google.accounts){ reject(new Error('GIS not loaded')); return; }
+    if(!gdTokenClient){
+      gdTokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: GD_CLIENT_ID,
+        scope: GD_SCOPE,
+        callback: ()=>{} // จะถูก override ด้านล่าง
+      });
+    }
+    gdTokenClient.callback = (resp)=>{
+      if(resp.error){ reject(new Error(resp.error)); return; }
       gdToken = resp.access_token;
-      localStorage.setItem('gd_token', gdToken);
-      await gdInit();
-    }
+      gdTokenExp = Date.now() + (resp.expires_in ? resp.expires_in*1000 : 3500000);
+      resolve(gdToken);
+    };
+    try{
+      // silent ('' = ไม่เด้ง UI ถ้าเคยอนุญาตแล้ว) / interactive = เด้งหน้าเลือกบัญชี
+      gdTokenClient.requestAccessToken({ prompt: interactive ? 'consent' : '' });
+    }catch(e){ reject(e); }
   });
-  client.requestAccessToken();
 }
 
-function gdSignOut(){
-  if(gdToken) google.accounts.oauth2.revoke(gdToken);
-  gdToken = null; gdFileId = null; gdReady = false;
-  localStorage.removeItem('gd_token');
-  document.getElementById('btnSignIn').classList.remove('hidden');
-  document.getElementById('btnSync').classList.add('hidden');
-  document.getElementById('btnSignOut').classList.add('hidden');
-  gdSetStatus('☁️ ยังไม่ได้เชื่อมต่อ Google Drive');
-}
-
-async function gdInit(){
-  gdSetStatus('⏳ กำลังเชื่อมต่อ...', '');
-  try {
-    // หาไฟล์ข้อมูลใน appDataFolder
-    const res = await fetch(
-      'https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&fields=files(id,name)&q=name%3D%27' + GD_FILENAME + '%27',
-      { headers: { Authorization: 'Bearer ' + gdToken } }
-    );
-    const data = await res.json();
-    if(data.files && data.files.length > 0){
-      gdFileId = data.files[0].id;
-      // โหลดข้อมูลจาก Drive
-      await gdLoad();
-    } else {
-      // ไฟล์ยังไม่มี — ใช้ข้อมูล local แล้ว save ขึ้น Drive
-      await gdSaveNow();
-    }
-    gdReady = true;
-    gdSetStatus('✅ เชื่อมต่อ Google Drive แล้ว', 'ok');
-    document.getElementById('btnSignIn').classList.add('hidden');
-    document.getElementById('btnSync').classList.remove('hidden');
-    document.getElementById('btnSignOut').classList.remove('hidden');
-  } catch(e) {
-    gdSetStatus('❌ เชื่อมต่อไม่สำเร็จ — ' + e.message, 'err');
+/* ── fetch ที่ต่อ token อัตโนมัติ + retry เมื่อ 401 ── */
+async function gdFetch(url, options={}, interactive=false){
+  let token = await gdGetToken(interactive);
+  options.headers = Object.assign({}, options.headers, { Authorization: 'Bearer ' + token });
+  let res = await fetch(url, options);
+  if(res.status === 401){
+    gdToken = null; gdTokenExp = 0;
+    token = await gdGetToken(false);
+    options.headers.Authorization = 'Bearer ' + token;
+    res = await fetch(url, options);
   }
+  if(!res.ok && res.status !== 404) throw new Error('HTTP ' + res.status);
+  return res;
 }
 
-async function gdLoad(){
-  const res = await fetch(
-    'https://www.googleapis.com/drive/v3/files/' + gdFileId + '?alt=media',
-    { headers: { Authorization: 'Bearer ' + gdToken } }
-  );
-  const text = await res.text();
-  try {
-    const obj = JSON.parse(text);
-    if(obj.meetings && obj.works && obj.plans){
-      DB = obj;
-      localStorage.setItem(KEY, JSON.stringify(DB));
-      renderAll();
-    }
-  } catch(e) { console.log('gdLoad parse error', e); }
-}
-
-async function gdSaveNow(){
-  const body = JSON.stringify(DB);
-  if(!gdFileId){
-    // สร้างไฟล์ใหม่
-    const meta = await fetch(
-      'https://www.googleapis.com/drive/v3/files',
-      {
-        method:'POST',
-        headers:{ Authorization:'Bearer '+gdToken, 'Content-Type':'application/json' },
-        body: JSON.stringify({ name: GD_FILENAME, parents: ['appDataFolder'] })
-      }
-    );
+/* ── หา/สร้างไฟล์ข้อมูลใน appDataFolder ── */
+async function gdEnsureFile(){
+  if(gdFileId) return gdFileId;
+  const res = await gdFetch(
+    "https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&fields=files(id,name)&q=name%3D'" + GD_FILENAME + "'");
+  const data = await res.json();
+  if(data.files && data.files.length > 0){
+    gdFileId = data.files[0].id;
+  } else {
+    const meta = await gdFetch('https://www.googleapis.com/drive/v3/files', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({ name: GD_FILENAME, parents: ['appDataFolder'] })
+    });
     const mj = await meta.json();
     gdFileId = mj.id;
   }
-  // อัปเดตเนื้อหา
-  await fetch(
+  localStorage.setItem('gd_fileid', gdFileId);
+  return gdFileId;
+}
+
+/* ── โหลดจาก Drive ── */
+async function gdFetchRemote(){
+  await gdEnsureFile();
+  const res = await gdFetch('https://www.googleapis.com/drive/v3/files/' + gdFileId + '?alt=media');
+  if(res.status === 404) return null;
+  const text = await res.text();
+  if(!text) return null;
+  try{
+    const obj = JSON.parse(text);
+    if(obj && Array.isArray(obj.meetings) && Array.isArray(obj.works) && Array.isArray(obj.plans)) return obj;
+  }catch(e){}
+  return null;
+}
+
+/* ── อัปโหลดขึ้น Drive ── */
+async function gdUpload(){
+  await gdEnsureFile();
+  await gdFetch(
     'https://www.googleapis.com/upload/drive/v3/files/' + gdFileId + '?uploadType=media',
-    {
-      method:'PATCH',
-      headers:{ Authorization:'Bearer '+gdToken, 'Content-Type':'application/json' },
-      body: body
-    }
+    { method:'PATCH', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(DB) }
   );
 }
 
-async function gdSync(){
-  if(!gdToken || !gdReady){ alert('กรุณาเชื่อมต่อ Google Drive ก่อน'); return; }
-  gdSetStatus('⏳ กำลัง Sync...', '');
-  try {
-    await gdLoad();
-    await gdSaveNow();
-    gdSetStatus('✅ Sync เสร็จแล้ว ' + new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'}) + ' น.', 'ok');
-  } catch(e) {
-    gdSetStatus('❌ Sync ไม่สำเร็จ', 'err');
+/* ── Sync หลัก: เทียบ timestamp — ใหม่กว่าชนะ ── */
+async function gdSync(manual=false, interactive=false){
+  if(gdBusy) return;
+  gdBusy = true;
+  gdSetStatus('⏳ กำลัง Sync...');
+  try{
+    const remote = await gdFetchRemote();
+    const localT  = DB._updated || 0;
+    const remoteT = (remote && remote._updated) || 0;
+    if(remote && remoteT > localT){
+      // ข้อมูลบน Drive ใหม่กว่า → ใช้ของ Drive
+      DB = remote;
+      localStorage.setItem(KEY, JSON.stringify(DB));
+      renderAll();
+    } else if(localT > remoteT){
+      // ข้อมูลในเครื่องใหม่กว่า → อัปโหลดขึ้น Drive
+      await gdUpload();
+    }
+    // เท่ากัน = ตรงกันอยู่แล้ว ไม่ต้องทำอะไร
+    gdConnected = true;
+    localStorage.setItem('gd_connected','1');
+    gdShowButtons(true);
+    gdSetStatus('✅ Sync ล่าสุด ' + new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'}) + ' น.', 'ok');
+  }catch(e){
+    console.log('sync error', e);
+    if(manual || interactive){
+      gdSetStatus('❌ Sync ไม่สำเร็จ — กดเชื่อมต่อ Google ใหม่', 'err');
+      gdShowButtons(false);
+    } else {
+      gdSetStatus('⚠️ ออฟไลน์/หลุดการเชื่อมต่อ — ข้อมูลบันทึกในเครื่องแล้ว จะ sync เมื่อเชื่อมต่อได้', 'err');
+    }
+  }finally{
+    gdBusy = false;
   }
 }
+
+function gdSignIn(){
+  gdSetStatus('⏳ กำลังเชื่อมต่อ...');
+  gdGetToken(true)
+    .then(()=> gdSync(true))
+    .catch(e=> gdSetStatus('❌ เชื่อมต่อไม่สำเร็จ: ' + e.message, 'err'));
+}
+
+function gdSignOut(){
+  if(gdToken){ try{ google.accounts.oauth2.revoke(gdToken); }catch(e){} }
+  gdToken = null; gdTokenExp = 0; gdConnected = false;
+  localStorage.removeItem('gd_connected');
+  gdShowButtons(false);
+  gdSetStatus('☁️ ยังไม่ได้เชื่อมต่อ Google Drive');
+}
+
+/* ── โหลดใหม่ทุกครั้งที่กลับมาที่หน้าแอป (แก้ปัญหาหน้าค้างบนมือถือ) ── */
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState === 'visible' && gdConnected){
+    gdSync(false);
+  }
+});
+window.addEventListener('online', ()=>{ if(gdConnected) gdSync(false); });
 
 /* ─────────── จัดเก็บข้อมูล (localStorage + Drive) ─────────── */
 function load(){
@@ -513,33 +556,37 @@ function load(){
     if(r) DB = JSON.parse(r);
   }catch(e){}
   renderAll();
-  // พยายามเชื่อมต่อ Drive ด้วย token ที่เก็บไว้
-  const saved = localStorage.getItem('gd_token');
-  if(saved){
-    gdToken = saved;
-    gdInit().catch(()=>{
-      localStorage.removeItem('gd_token');
-      gdToken = null;
-    });
+  // ถ้าเคยเชื่อมต่อแล้ว → sync อัตโนมัติแบบเงียบ (รอ GIS โหลดก่อน)
+  if(gdConnected){
+    gdShowButtons(true);
+    gdSetStatus('⏳ กำลังเชื่อมต่อ Google Drive...');
+    const tryInit = (n)=>{
+      if(typeof google !== 'undefined' && google.accounts){ gdSync(false); }
+      else if(n < 20){ setTimeout(()=>tryInit(n+1), 400); }
+      else { gdSetStatus('⚠️ โหลด Google ไม่สำเร็จ — ตรวจอินเทอร์เน็ตแล้วรีเฟรช', 'err'); }
+    };
+    tryInit(0);
   }
 }
 
 let saveTimer=null;
 function save(){
+  DB._updated = Date.now();                      // ⏱ ประทับเวลาทุกครั้งที่แก้ไข
+  try{ localStorage.setItem(KEY, JSON.stringify(DB)); }catch(e){}
+  document.getElementById('savedAt').textContent =
+    new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'}) + ' น.';
+  // อัปโหลดขึ้น Drive (debounce กันยิงถี่)
   clearTimeout(saveTimer);
   saveTimer = setTimeout(async ()=>{
+    if(!gdConnected) return;
     try{
-      localStorage.setItem(KEY, JSON.stringify(DB));
-      document.getElementById('savedAt').textContent =
-        new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'}) + ' น.';
-      // บันทึกขึ้น Drive ด้วยถ้าเชื่อมต่ออยู่
-      if(gdReady && gdToken){
-        await gdSaveNow();
-      }
+      await gdUpload();
+      gdSetStatus('✅ Sync ล่าสุด ' + new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'}) + ' น.', 'ok');
     }catch(e){
-      document.getElementById('savedAt').textContent = 'บันทึกไม่สำเร็จ';
+      gdSetStatus('⚠️ ยังไม่ได้อัปโหลด — จะลองใหม่อัตโนมัติ', 'err');
+      setTimeout(()=>{ if(gdConnected) gdSync(false); }, 5000);
     }
-  }, 600);
+  }, 800);
 }
 
 /* ─────────── สลับหน้า ─────────── */
