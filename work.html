@@ -622,18 +622,18 @@ function showPage(p){
 /* ─────────── แถบเตือน ─────────── */
 function renderAlerts(){
   const box = document.getElementById('alerts');
-  const out = [];
+  const items = [];   // {sort, html} — sort น้อย = เร่งด่วนกว่า อยู่บนสุด
   // ประชุม / อบรมสัมมนา วันนี้-พรุ่งนี้ รวมถึงช่วงที่กำลังดำเนินอยู่
   DB.meetings.forEach(m=>{
     const ns = daysUntil(m.date);
     const ne = m.dateEnd ? daysUntil(m.dateEnd) : ns;
     const label = m.type==='sem' ? 'อบรม/สัมมนา' : 'ประชุม';
     if(ns===0 && ne===ns)
-      out.push(`<div class="alert red"><span class="ic">🔔</span><span>${label}วันนี้ ${m.time?m.time+' น. — ':''}<b>${esc(m.title)}</b>${m.place?' ('+esc(m.place)+')':''}</span></div>`);
+      items.push({sort:0, html:`<div class="alert red"><span class="ic">🔔</span><span>${label}วันนี้ ${m.time?m.time+' น. — ':''}<b>${esc(m.title)}</b>${m.place?' ('+esc(m.place)+')':''}</span></div>`});
     else if(ns<=0 && ne>=0)
-      out.push(`<div class="alert red"><span class="ic">🔔</span><span>${ns===0?'เริ่มวันนี้':'กำลังอยู่ในช่วง'}${label} — <b>${esc(m.title)}</b> (ถึง ${thDate(m.dateEnd)})</span></div>`);
+      items.push({sort:ns, html:`<div class="alert red"><span class="ic">🔔</span><span>${ns===0?'เริ่มวันนี้':'กำลังอยู่ในช่วง'}${label} — <b>${esc(m.title)}</b> (ถึง ${thDate(m.dateEnd)})</span></div>`});
     else if(ns===1)
-      out.push(`<div class="alert amber"><span class="ic">📅</span><span>พรุ่งนี้มี${label} ${m.time?m.time+' น. — ':''}<b>${esc(m.title)}</b></span></div>`);
+      items.push({sort:1, html:`<div class="alert amber"><span class="ic">📅</span><span>พรุ่งนี้มี${label} ${m.time?m.time+' น. — ':''}<b>${esc(m.title)}</b></span></div>`});
   });
   // งานเกินกำหนด / ใกล้กำหนด / เส้นตาย
   DB.works.forEach(w=>{
@@ -641,9 +641,23 @@ function renderAlerts(){
     const n = daysUntil(w.due);
     if(n===null) return;
     const dl = !!w.deadline;
-    if(n<0) out.push(`<div class="alert red"><span class="ic">⚠️</span><span><b>${esc(w.title)}</b> ${dl?'เลยเส้นตายมาแล้ว':'เกินกำหนดส่ง'} ${-n} วัน</span></div>`);
-    else if(n<=3 || (dl && n<=7)) out.push(`<div class="alert ${dl?'red':'amber'}"><span class="ic">${dl?'🚨':'⏳'}</span><span><b>${esc(w.title)}</b> ${dl?'เส้นตาย':'ครบกำหนดส่ง'}${n===0?'วันนี้':'ในอีก '+n+' วัน'} (${thDate(w.due)})</span></div>`);
+    if(n<0){
+      // เลยกำหนด — แดงเข้มสุด อยู่บนสุด
+      items.push({sort:n, html:`<div class="alert red"><span class="ic">⚠️</span><span><b>${esc(w.title)}</b> ${dl?'เลยเส้นตายมาแล้ว':'เกินกำหนดส่ง'} ${-n} วัน</span></div>`});
+    } else if(n<=2 || (dl && n<=7)){
+      // ≤2 วัน หรือ เส้นตาย ≤7 วัน → แดง · เกินจากนั้นแต่ยังใกล้ → เหลือง
+      const isRed = (n<=2) || (dl && n<=2);
+      const cls = isRed ? 'red' : 'amber';
+      const ic  = isRed ? '🚨' : '⏳';
+      items.push({sort:n, html:`<div class="alert ${cls}"><span class="ic">${ic}</span><span><b>${esc(w.title)}</b> ${dl?'เส้นตาย':'ครบกำหนดส่ง'}${n===0?'วันนี้':'ในอีก '+n+' วัน'} (${thDate(w.due)})</span></div>`});
+    } else if(n<=3){
+      // เหลือ 3 วัน (งานทั่วไป) → เหลือง
+      items.push({sort:n, html:`<div class="alert amber"><span class="ic">⏳</span><span><b>${esc(w.title)}</b> ครบกำหนดส่งในอีก ${n} วัน (${thDate(w.due)})</span></div>`});
+    }
   });
+  // เรียง: เหลือเวลาน้อย/เลยกำหนด อยู่บนสุด
+  items.sort((a,b)=>a.sort-b.sort);
+  const out = items.map(x=>x.html);
   if(!out.length && (DB.meetings.length||DB.works.length))
     out.push(`<div class="alert blue"><span class="ic">✓</span><span>ไม่มีรายการเร่งด่วนในขณะนี้</span></div>`);
   box.innerHTML = out.join('');
