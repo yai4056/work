@@ -328,8 +328,8 @@ header .today{font-size:.85rem;opacity:.85;margin-top:2px}
 <nav class="tabs">
   <button id="tab-dash" class="active" onclick="showPage('dash')"><span class="tic">📊</span>แดชบอร์ด</button>
   <button id="tab-meet" onclick="showPage('meet')"><span class="tic">📅</span>ประชุม</button>
-  <button id="tab-work" onclick="showPage('work')"><span class="tic">📁</span>งาน</button>
-  <button id="tab-plan" onclick="showPage('plan')"><span class="tic">🗓️</span>แผนอนาคต</button>
+  <button id="tab-work" onclick="showPage('work')"><span class="tic">✅</span>งาน</button>
+  <button id="tab-plan" onclick="showPage('plan')"><span class="tic">🌱</span>แผนอนาคต</button>
 </nav>
 
 <!-- ฟอร์ม (สร้างแบบไดนามิก) -->
@@ -663,6 +663,7 @@ function renderMeetings(){
       ${isSem?`<span class="badge sem">อบรม/สัมมนา${m.dateEnd&&m.dateEnd!==m.date?' หลายวัน':''}</span>`:''}
       ${cat?`<span class="badge cat-${cat.id}">${cat.name}</span>`:''}
       <div class="card-actions">
+        <button class="btn primary small" onclick="meetToWork('${m.id}')">📌 ข้อสั่งการที่ประชุม</button>
         <button class="btn ghost small" onclick="openMeetForm('${m.id}')">แก้ไข</button>
         <button class="btn danger small" onclick="delMeet('${m.id}')">ลบ</button>
       </div>
@@ -709,6 +710,24 @@ function delMeet(id){
   DB.meetings = DB.meetings.filter(x=>x.id!==id);
   save(); renderAll();
 }
+/* ── สะพานประชุม → งาน: สกัดงานจากมติที่ประชุม ── */
+function meetToWork(id){
+  const m = DB.meetings.find(x=>x.id===id);
+  if(!m) return;
+  const ref = `📌 จากการประชุม "${m.title}" (${thDate(m.date,true)})`;
+  // เด้งไปหน้างานก่อน แล้วเปิดฟอร์มพร้อมข้อมูล prefill จากประชุม
+  showPage('work');
+  setTimeout(()=>{
+    openWorkForm(null, {
+      leader: m.chair || '',           // ประธาน/ผู้สั่งการ → หัวหน้าผู้สั่งการ
+      coord: m.coord || '',            // ผู้ประสานงาน
+      cat: 4,                          // ค่าเริ่มต้น: งานข้อสั่งการ/งานเร่งด่วน
+      urgent: true,                    // มติที่ประชุมมักต้องรีบดำเนินการ
+      note: ref + (m.note ? '\nวาระ/หมายเหตุ: ' + m.note : '')
+    });
+  }, 100);
+}
+
 
 /* ─────────── งาน ─────────── */
 function allDone(w){ return w.tasks.length>0 && w.tasks.every(t=>t.done); }
@@ -817,8 +836,8 @@ function delTask(wid,tid){
   w.tasks = w.tasks.filter(x=>x.id!==tid);
   save(); renderWorks();
 }
-function openWorkForm(id){
-  const w = DB.works.find(x=>x.id===id) || {title:'',caseno:'',leader:'',coord:'',due:'',deadline:false,urgent:false,important:false,cat:1};
+function openWorkForm(id, prefill){
+  const w = DB.works.find(x=>x.id===id) || Object.assign({title:'',caseno:'',leader:'',coord:'',due:'',deadline:false,urgent:false,important:false,cat:1,note:''}, prefill||{});
   openSheet(`
     <h3>${id?'แก้ไขข้อมูลงาน':'เพิ่มงานใหม่'}</h3>
     <div class="f-group"><label>ชื่องาน / เรื่อง *</label><input id="f_title" value="${esc(w.title)}" placeholder="เช่น จัดทำรายงานประจำเดือน..."></div>
