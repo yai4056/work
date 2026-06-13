@@ -45,7 +45,8 @@ header h1{
   font-weight:600;
   letter-spacing:.2px;
 }
-header .today{font-size:.85rem;opacity:.85;margin-top:2px}
+header .tagline{font-size:.85rem;opacity:.9;margin-top:3px;letter-spacing:.3px;font-style:italic}
+header .tagline b{color:var(--gold);font-weight:700;font-style:normal}
 .wrap{max-width:760px;margin:0 auto;padding:14px}
 
 /* ── แถบเตือน ── */
@@ -236,6 +237,16 @@ header .today{font-size:.85rem;opacity:.85;margin-top:2px}
 .mx-item b{display:block;font-size:.85rem;line-height:1.3}
 .mx-item .mx-meta{display:block;font-size:.72rem;color:var(--muted);margin-top:2px}
 .mx-empty{font-size:.78rem;color:#b8b2a4;text-align:center;padding:8px 0}
+/* ── ข้อสั่งการที่ประชุม ── */
+.orders{margin-top:11px;border-top:1px dashed var(--line);padding-top:9px}
+.ord-item{background:#fbfaf7;border:1px solid var(--line);border-radius:8px;padding:9px 11px;margin-bottom:7px}
+.ord-item.ord-sent{opacity:.7;background:#f0f4ef}
+.ord-text{font-size:.9rem;font-weight:600;line-height:1.35}
+.ord-meta{font-size:.8rem;color:var(--muted);margin-top:3px}
+.ord-act{display:flex;align-items:center;gap:8px;margin-top:7px}
+.ord-act .del-t{margin-left:auto;border:none;background:none;color:#c9c2b4;cursor:pointer;font-size:.95rem;padding:0 4px}
+.ord-done{font-size:.8rem;font-weight:700;color:var(--green)}
+.ord-buttons{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
 
 /* ── Google Drive Sync ── */
 .gdrive-bar{
@@ -257,7 +268,7 @@ header .today{font-size:.85rem;opacity:.85;margin-top:2px}
 
 <header>
   <h1>YAI Matrix</h1>
-  <div class="today" id="todayLine"></div>
+  <div class="tagline"><b>Y</b>our <b>A</b>genda <b>I</b>ntelligence</div>
 </header>
 
 <div class="wrap">
@@ -662,13 +673,43 @@ function renderMeetings(){
       ${m.note?`<div class="meta">📝 ${esc(m.note)}</div>`:''}
       ${isSem?`<span class="badge sem">อบรม/สัมมนา${m.dateEnd&&m.dateEnd!==m.date?' หลายวัน':''}</span>`:''}
       ${cat?`<span class="badge cat-${cat.id}">${cat.name}</span>`:''}
+      ${ordersHTML(m)}
       <div class="card-actions">
-        <button class="btn primary small" onclick="meetToWork('${m.id}')">📌 ข้อสั่งการที่ประชุม</button>
         <button class="btn ghost small" onclick="openMeetForm('${m.id}')">แก้ไข</button>
         <button class="btn danger small" onclick="delMeet('${m.id}')">ลบ</button>
       </div>
     </div>`;
   }).join('');
+}
+/* ── ส่วนแสดงข้อสั่งการในการ์ดประชุม ── */
+function ordersHTML(m){
+  const orders = m.orders || [];
+  const pending = orders.filter(o=>!o.workId).length;
+  const rows = orders.map(o=>{
+    const doers = (o.doer||'').split(',').map(s=>s.trim()).filter(Boolean);
+    const doerStr = doers.length
+      ? doers.map((d,i)=>i===0?`<b>${esc(d)}</b> (เจ้าภาพ)`:esc(d)).join(' + ')
+      : '<span style="color:var(--muted)">ยังไม่ระบุผู้ปฏิบัติ</span>';
+    const sent = !!o.workId;
+    return `<div class="ord-item ${sent?'ord-sent':''}">
+      <div class="ord-text">📌 ${esc(o.text)}</div>
+      <div class="ord-meta">👤 ${doerStr}${o.due?` · 📅 ${thDate(o.due)}`:''}</div>
+      <div class="ord-act">
+        ${sent
+          ? '<span class="ord-done">✓ เป็นงานแล้ว</span>'
+          : `<button class="btn ghost small" onclick="orderToWork('${m.id}','${o.id}')">ส่งเข้างาน →</button>`}
+        <button class="del-t" title="ลบข้อสั่งการ" onclick="delOrder('${m.id}','${o.id}')">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+  return `<div class="orders">
+    <div class="t-label">📋 ข้อสั่งการที่ประชุม (${orders.length})</div>
+    ${rows}
+    <div class="ord-buttons">
+      <button class="btn ghost small" onclick="openOrderForm('${m.id}')">+ เพิ่มข้อสั่งการ</button>
+      ${pending>1?`<button class="btn primary small" onclick="allOrdersToWork('${m.id}')">📌 ส่งเข้างานทั้งหมด (${pending})</button>`:''}
+    </div>
+  </div>`;
 }
 function openMeetForm(id){
   const m = DB.meetings.find(x=>x.id===id) || {title:'',type:'meet',date:todayStr(),dateEnd:'',time:'',place:'',chair:'',coord:'',note:'',cat:3};
@@ -701,8 +742,12 @@ function saveMeet(id){
   if(dateEnd && dateEnd < date){alert('วันสิ้นสุดต้องไม่ก่อนวันเริ่ม');return;}
   const obj = {id:id||uid(), title, type:gv('f_type'), date, dateEnd, time:gv('f_time'),
                place:gv('f_place'), chair:gv('f_chair'), coord:gv('f_coord'), note:gv('f_note'), cat:gv('f_cat')};
-  if(id){ const i=DB.meetings.findIndex(x=>x.id===id); DB.meetings[i]=obj; }
-  else DB.meetings.push(obj);
+  if(id){
+    const i=DB.meetings.findIndex(x=>x.id===id);
+    obj.orders = DB.meetings[i].orders || [];   // คงข้อสั่งการเดิมไว้
+    DB.meetings[i]=obj;
+  }
+  else { obj.orders = []; DB.meetings.push(obj); }
   closeSheet(); save(); renderAll();
 }
 function delMeet(id){
@@ -710,23 +755,84 @@ function delMeet(id){
   DB.meetings = DB.meetings.filter(x=>x.id!==id);
   save(); renderAll();
 }
-/* ── สะพานประชุม → งาน: สกัดงานจากมติที่ประชุม ── */
-function meetToWork(id){
-  const m = DB.meetings.find(x=>x.id===id);
-  if(!m) return;
-  const ref = `📌 จากการประชุม "${m.title}" (${thDate(m.date,true)})`;
-  // เด้งไปหน้างานก่อน แล้วเปิดฟอร์มพร้อมข้อมูล prefill จากประชุม
-  showPage('work');
-  setTimeout(()=>{
-    openWorkForm(null, {
-      leader: m.chair || '',           // ประธาน/ผู้สั่งการ → หัวหน้าผู้สั่งการ
-      coord: m.coord || '',            // ผู้ประสานงาน
-      cat: 4,                          // ค่าเริ่มต้น: งานข้อสั่งการ/งานเร่งด่วน
-      urgent: true,                    // มติที่ประชุมมักต้องรีบดำเนินการ
-      note: ref + (m.note ? '\nวาระ/หมายเหตุ: ' + m.note : '')
-    });
-  }, 100);
+/* ── ระบบข้อสั่งการที่ประชุม (แนวทาง C) ── */
+function openOrderForm(meetId, orderId){
+  const m = DB.meetings.find(x=>x.id===meetId); if(!m) return;
+  m.orders = m.orders || [];
+  const o = m.orders.find(x=>x.id===orderId) || {text:'',doer:'',due:''};
+  openSheet(`
+    <h3>${orderId?'แก้ไขข้อสั่งการ':'เพิ่มข้อสั่งการ'}</h3>
+    <p class="meta" style="margin-bottom:10px">มติ/ข้อสั่งการจากการประชุม "<b>${esc(m.title)}</b>"</p>
+    <div class="f-group"><label>เนื้อหาข้อสั่งการ *</label><textarea id="o_text" placeholder="เช่น เร่งรัดจัดทำรายงานเสนอผู้บังคับบัญชา">${esc(o.text)}</textarea></div>
+    <div class="f-group"><label>ผู้ปฏิบัติ <small>(หลายหน่วยคั่นด้วย , — หน่วยแรกคือเจ้าภาพ)</small></label><input id="o_doer" value="${esc(o.doer||'')}" placeholder="เช่น ฝ่ายสืบสวน, ฝ่ายสอบสวน"></div>
+    <div class="f-group"><label>กำหนดส่ง</label><input type="date" id="o_due" value="${o.due||''}"></div>
+    <div class="sheet-actions">
+      <button class="btn ghost" onclick="closeSheet()">ยกเลิก</button>
+      <button class="btn primary" onclick="saveOrder('${meetId}','${orderId||''}')">บันทึก</button>
+    </div>`);
 }
+function saveOrder(meetId, orderId){
+  const text = gv('o_text'); if(!text){alert('กรุณาระบุเนื้อหาข้อสั่งการ');return;}
+  const m = DB.meetings.find(x=>x.id===meetId); if(!m) return;
+  m.orders = m.orders || [];
+  const fields = {text, doer:gv('o_doer'), due:gv('o_due')};
+  if(orderId){
+    const o = m.orders.find(x=>x.id===orderId);
+    Object.assign(o, fields);
+  } else {
+    m.orders.push({id:uid(), ...fields, workId:null});
+  }
+  closeSheet(); save(); renderMeetings();
+}
+function delOrder(meetId, orderId){
+  const m = DB.meetings.find(x=>x.id===meetId); if(!m) return;
+  if(!confirm('ลบข้อสั่งการนี้?')) return;
+  m.orders = (m.orders||[]).filter(x=>x.id!==orderId);
+  save(); renderMeetings();
+}
+/* สร้างงานจากข้อสั่งการ 1 ข้อ */
+function makeWorkFromOrder(m, o){
+  const ref = `📌 จากการประชุม "${m.title}" (${thDate(m.date,true)})`;
+  const doers = (o.doer||'').split(',').map(s=>s.trim()).filter(Boolean);
+  const leader = doers[0] || (m.chair||'');           // เจ้าภาพ = หน่วยแรก
+  const others = doers.slice(1);
+  const wid = uid();
+  DB.works.push({
+    id: wid,
+    title: o.text,
+    caseno: '',
+    leader: leader,
+    coord: m.coord || '',
+    due: o.due || '',
+    deadline: false,
+    urgent: true,
+    important: false,
+    cat: 4,
+    note: ref + (others.length?`\nหน่วยร่วม: ${others.join(', ')}`:'') + (m.note?`\nวาระ/หมายเหตุ: ${m.note}`:''),
+    tasks: []
+  });
+  o.workId = wid;   // ทำเครื่องหมายว่าส่งเป็นงานแล้ว
+  return wid;
+}
+/* ส่งข้อสั่งการ 1 ข้อ เข้างาน */
+function orderToWork(meetId, orderId){
+  const m = DB.meetings.find(x=>x.id===meetId); if(!m) return;
+  const o = (m.orders||[]).find(x=>x.id===orderId); if(!o || o.workId) return;
+  makeWorkFromOrder(m, o);
+  save(); renderAll();
+  alert('สร้างงานจากข้อสั่งการแล้ว — ดูได้ที่แท็บ "งาน" และจัดลำดับใน Matrix');
+}
+/* ส่งข้อสั่งการที่ยังไม่ส่ง ทั้งหมดเข้างาน */
+function allOrdersToWork(meetId){
+  const m = DB.meetings.find(x=>x.id===meetId); if(!m) return;
+  const pending = (m.orders||[]).filter(o=>!o.workId);
+  if(!pending.length) return;
+  if(!confirm(`ส่งข้อสั่งการ ${pending.length} ข้อ เข้าเป็นงานทั้งหมด?`)) return;
+  pending.forEach(o=>makeWorkFromOrder(m, o));
+  save(); renderAll();
+  alert(`สร้างงาน ${pending.length} รายการแล้ว — ดูได้ที่แท็บ "งาน"`);
+}
+
 
 
 /* ─────────── งาน ─────────── */
@@ -1157,9 +1263,6 @@ function renderAll(){
 }
 
 /* ─────────── เริ่มต้น ─────────── */
-const now = new Date();
-document.getElementById('todayLine').textContent =
-  `วันนี้ วัน${THD[now.getDay()]}ที่ ${now.getDate()} ${THM[now.getMonth()]} ${now.getFullYear()+543}`;
 load();
 </script>
 </body>
