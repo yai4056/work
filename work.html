@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ระบบจัดการงานและการประชุม</title>
+<title>ระบบจัดการงานตามความเร่งด่วนและความสำคัญ</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&family=Pridi:wght@500;600&display=swap" rel="stylesheet">
 <style>
@@ -245,7 +245,7 @@ header .today{font-size:.85rem;opacity:.85;margin-top:2px}
 <body>
 
 <header>
-  <h1>ระบบจัดการงานและการประชุม</h1>
+  <h1>ระบบจัดการงานตามความเร่งด่วนและความสำคัญ</h1>
   <div class="today" id="todayLine"></div>
 </header>
 
@@ -293,7 +293,7 @@ header .today{font-size:.85rem;opacity:.85;margin-top:2px}
   <!-- ════ หน้างาน ════ -->
   <section id="page-work" class="hidden">
     <div class="sec-head">
-      <h2>งาน / สำนวน</h2>
+      <h2>งาน</h2>
       <button class="btn primary small" onclick="openWorkForm()">+ เพิ่มงาน</button>
     </div>
     <div class="chips" id="catChips"></div>
@@ -317,7 +317,7 @@ header .today{font-size:.85rem;opacity:.85;margin-top:2px}
 <nav class="tabs">
   <button id="tab-dash" class="active" onclick="showPage('dash')"><span class="tic">📊</span>แดชบอร์ด</button>
   <button id="tab-meet" onclick="showPage('meet')"><span class="tic">📅</span>ประชุม</button>
-  <button id="tab-work" onclick="showPage('work')"><span class="tic">📁</span>งาน/สำนวน</button>
+  <button id="tab-work" onclick="showPage('work')"><span class="tic">📁</span>งาน</button>
   <button id="tab-plan" onclick="showPage('plan')"><span class="tic">🗓️</span>แผนอนาคต</button>
 </nav>
 
@@ -329,11 +329,10 @@ header .today{font-size:.85rem;opacity:.85;margin-top:2px}
 <script>
 /* ─────────── ค่าคงที่ ─────────── */
 const CATS = [
-  {id:1,name:'สำนวนการสอบสวน'},
-  {id:2,name:'ความเห็นแย้งคำสั่งไม่ฟ้อง'},
-  {id:3,name:'ประชุมคดี / ข้อราชการ'},
-  {id:4,name:'งานบริหาร / ธุรการ'},
-  {id:5,name:'อื่น ๆ'}
+  {id:1,name:'งานประจำ'},
+  {id:2,name:'งานวงรอบ'},
+  {id:3,name:'งานนโยบาย / โครงการ'},
+  {id:4,name:'งานข้อสั่งการ / งานเร่งด่วน'}
 ];
 const THM = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 const THD = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
@@ -663,7 +662,7 @@ function openMeetForm(id){
   const m = DB.meetings.find(x=>x.id===id) || {title:'',type:'meet',date:todayStr(),dateEnd:'',time:'',place:'',chair:'',coord:'',note:'',cat:3};
   openSheet(`
     <h3>${id?'แก้ไขรายการ':'เพิ่มประชุม / อบรม-สัมมนา'}</h3>
-    <div class="f-group"><label>หัวข้อ *</label><input id="f_title" value="${esc(m.title)}" placeholder="เช่น ประชุมพิจารณาสำนวนคดี... / อบรมหลักสูตร..."></div>
+    <div class="f-group"><label>หัวข้อ *</label><input id="f_title" value="${esc(m.title)}" placeholder="เช่น ประชุมข้อราชการ... / อบรมหลักสูตร..."></div>
     <div class="f-group"><label>ลักษณะ</label><select id="f_type">
       <option value="meet" ${m.type!=='sem'?'selected':''}>ประชุม (วันเดียว)</option>
       <option value="sem" ${m.type==='sem'?'selected':''}>อบรม/สัมมนา (อาจมีหลายวัน)</option>
@@ -700,7 +699,7 @@ function delMeet(id){
   save(); renderAll();
 }
 
-/* ─────────── งาน / สำนวน ─────────── */
+/* ─────────── งาน ─────────── */
 function allDone(w){ return w.tasks.length>0 && w.tasks.every(t=>t.done); }
 function renderChips(){
   const counts = {};
@@ -736,13 +735,11 @@ function renderWorks(){
     const n = daysUntil(w.due);
     const prio = w.prio||'n';
     const cls = allDone(w)?'done-all':(prio==='r'||(n!==null&&n<0)?'overdue':(prio==='y'||(n!==null&&n<=7)?'soon':''));
-    const kps = (w.team||'').split(',').map(s=>s.trim()).filter(Boolean);
     return `<div class="card ${cls}" id="card-w-${w.id}">
       ${!allDone(w)?dueBadge(w.due, w.deadline):'<span class="due ok">เสร็จสมบูรณ์</span>'}
       <div class="h-row"><span class="prio ${prio}" title="ความเร่งด่วน"></span><h3>${esc(w.title)}</h3></div>
-      ${w.caseno?`<div class="meta">เลขสำนวน/เรื่อง: <b>${esc(w.caseno)}</b></div>`:''}
+      ${w.caseno?`<div class="meta">เลขที่หนังสือ/อ้างอิง: <b>${esc(w.caseno)}</b></div>`:''}
       <div class="meta">หัวหน้าผู้สั่งการ: <span class="leader-tag">${esc(w.leader||'—')}</span></div>
-      ${kps.length?`<div class="team-line">ทีมงาน (คีย์แมน): ${kps.map(k=>`<span class="kp">${esc(k)}</span>`).join('')}</div>`:''}
       ${w.coord?`<div class="meta">📞 ผู้ประสานงาน: <b>${esc(w.coord)}</b></div>`:''}
       ${w.due?`<div class="meta">${w.deadline?'🚨 <b style="color:var(--red)">เส้นตาย (deadline)</b>':'กำหนดส่ง'}: <b>${thDate(w.due,true)}</b></div>`:''}
       ${w.note?`<div class="meta">📝 ${esc(w.note)}</div>`:''}
@@ -793,8 +790,8 @@ function openWorkForm(id){
   const w = DB.works.find(x=>x.id===id) || {title:'',caseno:'',leader:'',team:'',coord:'',due:'',deadline:false,prio:'n',cat:1};
   openSheet(`
     <h3>${id?'แก้ไขข้อมูลงาน':'เพิ่มงานใหม่'}</h3>
-    <div class="f-group"><label>ชื่องาน / เรื่อง *</label><input id="f_title" value="${esc(w.title)}" placeholder="เช่น ทำความเห็นแย้งคดี..."></div>
-    <div class="f-group"><label>เลขสำนวน / เลขเรื่อง</label><input id="f_caseno" value="${esc(w.caseno||'')}"></div>
+    <div class="f-group"><label>ชื่องาน / เรื่อง *</label><input id="f_title" value="${esc(w.title)}" placeholder="เช่น จัดทำรายงานประจำเดือน..."></div>
+    <div class="f-group"><label>เลขที่หนังสือ / อ้างอิง</label><input id="f_caseno" value="${esc(w.caseno||'')}"></div>
     <div class="f-group"><label>ประเภทงาน *</label><select id="f_cat">${CATS.map(c=>`<option value="${c.id}" ${c.id==w.cat?'selected':''}>${c.name}</option>`).join('')}</select></div>
     <div class="f-group"><label>ความเร่งด่วน</label><select id="f_prio">
       <option value="n" ${w.prio==='n'||!w.prio?'selected':''}>🔵 น้ำเงิน — ไม่ระบุความเร่งด่วน</option>
@@ -803,7 +800,6 @@ function openWorkForm(id){
       <option value="r" ${w.prio==='r'?'selected':''}>🔴 แดง — ด่วนที่สุด</option>
     </select></div>
     <div class="f-group"><label>หัวหน้าผู้สั่งการ</label><input id="f_leader" value="${esc(w.leader||'')}"></div>
-    <div class="f-group"><label>ทีมงาน / คีย์แมน <small>(คั่นด้วยเครื่องหมายจุลภาค ,)</small></label><input id="f_team" value="${esc(w.team||'')}" placeholder="เช่น พ.ต.ท.สมชาย, ร.ต.อ.สมหญิง"></div>
     <div class="f-group"><label>ผู้ประสานงาน <small>(ชื่อ–เบอร์ติดต่อ)</small></label><input id="f_coord" value="${esc(w.coord||'')}" placeholder="เช่น คุณสมศรี 08x-xxx-xxxx"></div>
     <div class="f-group"><label>กำหนดเวลาส่ง</label><input type="date" id="f_due" value="${w.due||''}"></div>
     <div class="f-group"><label class="f-check"><input type="checkbox" id="f_deadline" ${w.deadline?'checked':''}> เป็นเส้นตาย (deadline) เลื่อนไม่ได้</label></div>
@@ -816,7 +812,7 @@ function openWorkForm(id){
 function saveWork(id){
   const title = gv('f_title'); if(!title){alert('กรุณาระบุชื่องาน');return;}
   const dl = document.getElementById('f_deadline').checked;
-  const fields = {title,caseno:gv('f_caseno'),leader:gv('f_leader'),team:gv('f_team'),coord:gv('f_coord'),
+  const fields = {title,caseno:gv('f_caseno'),leader:gv('f_leader'),coord:gv('f_coord'),
                   due:gv('f_due'),deadline:dl,prio:gv('f_prio'),cat:gv('f_cat'),note:gv('f_note')};
   if(id){
     const w = DB.works.find(x=>x.id===id);
