@@ -745,6 +745,7 @@ function renderWorks(){
       ${kps.length?`<div class="team-line">ทีมงาน (คีย์แมน): ${kps.map(k=>`<span class="kp">${esc(k)}</span>`).join('')}</div>`:''}
       ${w.coord?`<div class="meta">📞 ผู้ประสานงาน: <b>${esc(w.coord)}</b></div>`:''}
       ${w.due?`<div class="meta">${w.deadline?'🚨 <b style="color:var(--red)">เส้นตาย (deadline)</b>':'กำหนดส่ง'}: <b>${thDate(w.due,true)}</b></div>`:''}
+      ${w.note?`<div class="meta">📝 ${esc(w.note)}</div>`:''}
       ${cat?`<span class="badge cat-${cat.id}">${cat.name}</span>`:''}
       ${w.tasks.length?`<div class="progress"><i style="width:${pct}%"></i></div>`:''}
       <div class="tasks">
@@ -806,6 +807,7 @@ function openWorkForm(id){
     <div class="f-group"><label>ผู้ประสานงาน <small>(ชื่อ–เบอร์ติดต่อ)</small></label><input id="f_coord" value="${esc(w.coord||'')}" placeholder="เช่น คุณสมศรี 08x-xxx-xxxx"></div>
     <div class="f-group"><label>กำหนดเวลาส่ง</label><input type="date" id="f_due" value="${w.due||''}"></div>
     <div class="f-group"><label class="f-check"><input type="checkbox" id="f_deadline" ${w.deadline?'checked':''}> เป็นเส้นตาย (deadline) เลื่อนไม่ได้</label></div>
+    <div class="f-group"><label>หมายเหตุ / รายละเอียดเพิ่มเติม</label><textarea id="f_note" placeholder="เช่น ประเด็นข้อกฎหมาย แนวทางการพิจารณา ข้อสังเกต">${esc(w.note||'')}</textarea></div>
     <div class="sheet-actions">
       <button class="btn ghost" onclick="closeSheet()">ยกเลิก</button>
       <button class="btn primary" onclick="saveWork('${id||''}')">บันทึก</button>
@@ -815,7 +817,7 @@ function saveWork(id){
   const title = gv('f_title'); if(!title){alert('กรุณาระบุชื่องาน');return;}
   const dl = document.getElementById('f_deadline').checked;
   const fields = {title,caseno:gv('f_caseno'),leader:gv('f_leader'),team:gv('f_team'),coord:gv('f_coord'),
-                  due:gv('f_due'),deadline:dl,prio:gv('f_prio'),cat:gv('f_cat')};
+                  due:gv('f_due'),deadline:dl,prio:gv('f_prio'),cat:gv('f_cat'),note:gv('f_note')};
   if(id){
     const w = DB.works.find(x=>x.id===id);
     Object.assign(w, fields);
