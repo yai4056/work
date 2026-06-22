@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ระบบจัดการงานและการประชุม</title>
+<title>YAI Matrix</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&family=Pridi:wght@500;600&display=swap" rel="stylesheet">
 <style>
@@ -45,7 +45,8 @@ header h1{
   font-weight:600;
   letter-spacing:.2px;
 }
-header .today{font-size:.85rem;opacity:.85;margin-top:2px}
+header .tagline{font-size:.85rem;opacity:.9;margin-top:3px;letter-spacing:.3px;font-style:italic}
+header .tagline b{color:var(--gold);font-weight:700;font-style:normal}
 .wrap{max-width:760px;margin:0 auto;padding:14px}
 
 /* ── แถบเตือน ── */
@@ -238,6 +239,27 @@ header .today{font-size:.85rem;opacity:.85;margin-top:2px}
 .work-divider.done::before,.work-divider.done::after{background:#b2dfc0}
 /* ── การ์ดเสร็จแล้ว: ขีดฆ่าชื่องาน ── */
 .card.done-all h3{text-decoration:line-through;color:var(--muted)}
+/* ── Eisenhower Matrix grid ── */
+.mx-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mx-cell{border:1px solid var(--line);border-radius:var(--radius);padding:10px 11px;min-height:120px}
+.mx-head{font-weight:700;font-size:.92rem;display:flex;align-items:center;gap:6px}
+.mx-count{background:rgba(0,0,0,.08);border-radius:999px;padding:0 8px;font-size:.78rem;min-width:22px;text-align:center}
+.mx-sub{font-size:.72rem;color:var(--muted);margin:2px 0 8px}
+.mx-item{background:#fff;border:1px solid var(--line);border-radius:7px;padding:7px 9px;margin-bottom:6px;cursor:pointer;transition:box-shadow .15s}
+.mx-item:active{box-shadow:0 0 0 2px var(--gold)}
+.mx-item b{display:block;font-size:.85rem;line-height:1.3}
+.mx-item .mx-meta{display:block;font-size:.72rem;color:var(--muted);margin-top:2px}
+.mx-empty{font-size:.78rem;color:#b8b2a4;text-align:center;padding:8px 0}
+/* ── ข้อสั่งการที่ประชุม ── */
+.orders{margin-top:11px;border-top:1px dashed var(--line);padding-top:9px}
+.ord-item{background:#fbfaf7;border:1px solid var(--line);border-radius:8px;padding:9px 11px;margin-bottom:7px}
+.ord-item.ord-sent{opacity:.7;background:#f0f4ef}
+.ord-text{font-size:.9rem;font-weight:600;line-height:1.35}
+.ord-meta{font-size:.8rem;color:var(--muted);margin-top:3px}
+.ord-act{display:flex;align-items:center;gap:8px;margin-top:7px}
+.ord-act .del-t{margin-left:auto;border:none;background:none;color:#c9c2b4;cursor:pointer;font-size:.95rem;padding:0 4px}
+.ord-done{font-size:.8rem;font-weight:700;color:var(--green)}
+.ord-buttons{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
 
 /* ── Google Drive Sync ── */
 .gdrive-bar{
@@ -258,8 +280,8 @@ header .today{font-size:.85rem;opacity:.85;margin-top:2px}
 <body>
 
 <header>
-  <h1>ระบบจัดการงานและการประชุม</h1>
-  <div class="today" id="todayLine"></div>
+  <h1>YAI Matrix</h1>
+  <div class="tagline"><b>Y</b>our <b>A</b>genda <b>I</b>ntelligence</div>
 </header>
 
 <div class="wrap">
@@ -279,8 +301,8 @@ header .today{font-size:.85rem;opacity:.85;margin-top:2px}
   <section id="page-dash">
     <div class="sec-head"><h2>แดชบอร์ด</h2></div>
     <div class="chips">
-      <button class="chip active" id="dchip-cal" onclick="setDash('cal')">📅 ปฏิทิน</button>
-      <button class="chip" id="dchip-prio" onclick="setDash('prio')">🚦 ความเร่งด่วน</button>
+      <button class="chip active" id="dchip-matrix" onclick="setDash('matrix')">🧭 Matrix</button>
+      <button class="chip" id="dchip-cal" onclick="setDash('cal')">📅 ปฏิทิน</button>
       <button class="chip" id="dchip-leader" onclick="setDash('leader')">👤 ผู้สั่งการ</button>
     </div>
     <div id="dashBody"></div>
@@ -306,11 +328,11 @@ header .today{font-size:.85rem;opacity:.85;margin-top:2px}
   <!-- ════ หน้างาน ════ -->
   <section id="page-work" class="hidden">
     <div class="sec-head">
-      <h2>งาน / สำนวน</h2>
+      <h2>งาน</h2>
       <button class="btn primary small" onclick="openWorkForm()">+ เพิ่มงาน</button>
     </div>
     <div class="chips" id="catChips"></div>
-    <div class="legend">ความเร่งด่วน:<i style="background:#d12f36"></i>แดง = ด่วนที่สุด<i style="background:#e0a800"></i>เหลือง = เร่ง<i style="background:#2e9e54"></i>เขียว = ปกติ<i style="background:#2a6fb0"></i>น้ำเงิน = ไม่ระบุ</div>
+    <div class="legend">จัดลำดับ:<i style="background:#d12f36"></i>แดง = ทำเลย (ด่วน+สำคัญ)<i style="background:#e0a800"></i>เหลือง = วางแผน (สำคัญ)<i style="background:#2e9e54"></i>เขียว = รีบเคลียร์ (ด่วน)<i style="background:#2a6fb0"></i>น้ำเงิน = ทำทีหลัง</div>
     <div id="workList"></div>
   </section>
 
@@ -330,8 +352,8 @@ header .today{font-size:.85rem;opacity:.85;margin-top:2px}
 <nav class="tabs">
   <button id="tab-dash" class="active" onclick="showPage('dash')"><span class="tic">📊</span>แดชบอร์ด</button>
   <button id="tab-meet" onclick="showPage('meet')"><span class="tic">📅</span>ประชุม</button>
-  <button id="tab-work" onclick="showPage('work')"><span class="tic">📁</span>งาน/สำนวน</button>
-  <button id="tab-plan" onclick="showPage('plan')"><span class="tic">🗓️</span>แผนอนาคต</button>
+  <button id="tab-work" onclick="showPage('work')"><span class="tic">✅</span>งาน</button>
+  <button id="tab-plan" onclick="showPage('plan')"><span class="tic">🌱</span>แผนอนาคต</button>
 </nav>
 
 <!-- ฟอร์ม (สร้างแบบไดนามิก) -->
@@ -342,11 +364,10 @@ header .today{font-size:.85rem;opacity:.85;margin-top:2px}
 <script>
 /* ─────────── ค่าคงที่ ─────────── */
 const CATS = [
-  {id:1,name:'สำนวนการสอบสวน'},
-  {id:2,name:'ความเห็นแย้งคำสั่งไม่ฟ้อง'},
-  {id:3,name:'ประชุมคดี / ข้อราชการ'},
-  {id:4,name:'งานบริหาร / ธุรการ'},
-  {id:5,name:'อื่น ๆ'}
+  {id:1,name:'งานประจำ'},
+  {id:2,name:'งานวงรอบ'},
+  {id:3,name:'งานนโยบาย / โครงการ'},
+  {id:4,name:'งานข้อสั่งการ / งานเร่งด่วน'}
 ];
 const THM = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 const THD = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
@@ -614,18 +635,18 @@ function showPage(p){
 /* ─────────── แถบเตือน ─────────── */
 function renderAlerts(){
   const box = document.getElementById('alerts');
-  const out = [];
+  const items = [];   // {sort, html} — sort น้อย = เร่งด่วนกว่า อยู่บนสุด
   // ประชุม / อบรมสัมมนา วันนี้-พรุ่งนี้ รวมถึงช่วงที่กำลังดำเนินอยู่
   DB.meetings.forEach(m=>{
     const ns = daysUntil(m.date);
     const ne = m.dateEnd ? daysUntil(m.dateEnd) : ns;
     const label = m.type==='sem' ? 'อบรม/สัมมนา' : 'ประชุม';
     if(ns===0 && ne===ns)
-      out.push(`<div class="alert red"><span class="ic">🔔</span><span>${label}วันนี้ ${m.time?m.time+' น. — ':''}<b>${esc(m.title)}</b>${m.place?' ('+esc(m.place)+')':''}</span></div>`);
+      items.push({sort:0, html:`<div class="alert red"><span class="ic">🔔</span><span>${label}วันนี้ ${m.time?m.time+' น. — ':''}<b>${esc(m.title)}</b>${m.place?' ('+esc(m.place)+')':''}</span></div>`});
     else if(ns<=0 && ne>=0)
-      out.push(`<div class="alert red"><span class="ic">🔔</span><span>${ns===0?'เริ่มวันนี้':'กำลังอยู่ในช่วง'}${label} — <b>${esc(m.title)}</b> (ถึง ${thDate(m.dateEnd)})</span></div>`);
+      items.push({sort:ns, html:`<div class="alert red"><span class="ic">🔔</span><span>${ns===0?'เริ่มวันนี้':'กำลังอยู่ในช่วง'}${label} — <b>${esc(m.title)}</b> (ถึง ${thDate(m.dateEnd)})</span></div>`});
     else if(ns===1)
-      out.push(`<div class="alert amber"><span class="ic">📅</span><span>พรุ่งนี้มี${label} ${m.time?m.time+' น. — ':''}<b>${esc(m.title)}</b></span></div>`);
+      items.push({sort:1, html:`<div class="alert amber"><span class="ic">📅</span><span>พรุ่งนี้มี${label} ${m.time?m.time+' น. — ':''}<b>${esc(m.title)}</b></span></div>`});
   });
   // งานเกินกำหนด / ใกล้กำหนด / เส้นตาย
   DB.works.forEach(w=>{
@@ -633,9 +654,23 @@ function renderAlerts(){
     const n = daysUntil(w.due);
     if(n===null) return;
     const dl = !!w.deadline;
-    if(n<0) out.push(`<div class="alert red"><span class="ic">⚠️</span><span><b>${esc(w.title)}</b> ${dl?'เลยเส้นตายมาแล้ว':'เกินกำหนดส่ง'} ${-n} วัน</span></div>`);
-    else if(n<=3 || (dl && n<=7)) out.push(`<div class="alert ${dl?'red':'amber'}"><span class="ic">${dl?'🚨':'⏳'}</span><span><b>${esc(w.title)}</b> ${dl?'เส้นตาย':'ครบกำหนดส่ง'}${n===0?'วันนี้':'ในอีก '+n+' วัน'} (${thDate(w.due)})</span></div>`);
+    if(n<0){
+      // เลยกำหนด — แดงเข้มสุด อยู่บนสุด
+      items.push({sort:n, html:`<div class="alert red"><span class="ic">⚠️</span><span><b>${esc(w.title)}</b> ${dl?'เลยเส้นตายมาแล้ว':'เกินกำหนดส่ง'} ${-n} วัน</span></div>`});
+    } else if(n<=2 || (dl && n<=7)){
+      // ≤2 วัน หรือ เส้นตาย ≤7 วัน → แดง · เกินจากนั้นแต่ยังใกล้ → เหลือง
+      const isRed = (n<=2) || (dl && n<=2);
+      const cls = isRed ? 'red' : 'amber';
+      const ic  = isRed ? '🚨' : '⏳';
+      items.push({sort:n, html:`<div class="alert ${cls}"><span class="ic">${ic}</span><span><b>${esc(w.title)}</b> ${dl?'เส้นตาย':'ครบกำหนดส่ง'}${n===0?'วันนี้':'ในอีก '+n+' วัน'} (${thDate(w.due)})</span></div>`});
+    } else if(n<=3){
+      // เหลือ 3 วัน (งานทั่วไป) → เหลือง
+      items.push({sort:n, html:`<div class="alert amber"><span class="ic">⏳</span><span><b>${esc(w.title)}</b> ครบกำหนดส่งในอีก ${n} วัน (${thDate(w.due)})</span></div>`});
+    }
   });
+  // เรียง: เหลือเวลาน้อย/เลยกำหนด อยู่บนสุด
+  items.sort((a,b)=>a.sort-b.sort);
+  const out = items.map(x=>x.html);
   if(!out.length && (DB.meetings.length||DB.works.length))
     out.push(`<div class="alert blue"><span class="ic">✓</span><span>ไม่มีรายการเร่งด่วนในขณะนี้</span></div>`);
   box.innerHTML = out.join('');
@@ -665,6 +700,7 @@ function renderMeetings(){
       ${m.note?`<div class="meta">📝 ${esc(m.note)}</div>`:''}
       ${isSem?`<span class="badge sem">อบรม/สัมมนา${m.dateEnd&&m.dateEnd!==m.date?' หลายวัน':''}</span>`:''}
       ${cat?`<span class="badge cat-${cat.id}">${cat.name}</span>`:''}
+      ${ordersHTML(m)}
       <div class="card-actions">
         <button class="btn ghost small" onclick="openMeetForm('${m.id}')">แก้ไข</button>
         <button class="btn danger small" onclick="delMeet('${m.id}')">ลบ</button>
@@ -672,11 +708,41 @@ function renderMeetings(){
     </div>`;
   }).join('');
 }
+/* ── ส่วนแสดงข้อสั่งการในการ์ดประชุม ── */
+function ordersHTML(m){
+  const orders = m.orders || [];
+  const pending = orders.filter(o=>!o.workId).length;
+  const rows = orders.map(o=>{
+    const doers = (o.doer||'').split(',').map(s=>s.trim()).filter(Boolean);
+    const doerStr = doers.length
+      ? doers.map((d,i)=>i===0?`<b>${esc(d)}</b> (เจ้าภาพ)`:esc(d)).join(' + ')
+      : '<span style="color:var(--muted)">ยังไม่ระบุผู้ปฏิบัติ</span>';
+    const sent = !!o.workId;
+    return `<div class="ord-item ${sent?'ord-sent':''}">
+      <div class="ord-text">📌 ${esc(o.text)}</div>
+      <div class="ord-meta">👤 ${doerStr}${o.due?` · 📅 ${thDate(o.due)}`:''}</div>
+      <div class="ord-act">
+        ${sent
+          ? '<span class="ord-done">✓ เป็นงานแล้ว</span>'
+          : `<button class="btn ghost small" onclick="orderToWork('${m.id}','${o.id}')">ส่งเข้างาน →</button>`}
+        <button class="del-t" title="ลบข้อสั่งการ" onclick="delOrder('${m.id}','${o.id}')">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+  return `<div class="orders">
+    <div class="t-label">📋 ข้อสั่งการที่ประชุม (${orders.length})</div>
+    ${rows}
+    <div class="ord-buttons">
+      <button class="btn ghost small" onclick="openOrderForm('${m.id}')">+ เพิ่มข้อสั่งการ</button>
+      ${pending>1?`<button class="btn primary small" onclick="allOrdersToWork('${m.id}')">📌 ส่งเข้างานทั้งหมด (${pending})</button>`:''}
+    </div>
+  </div>`;
+}
 function openMeetForm(id){
   const m = DB.meetings.find(x=>x.id===id) || {title:'',type:'meet',date:todayStr(),dateEnd:'',time:'',place:'',chair:'',coord:'',note:'',cat:3};
   openSheet(`
     <h3>${id?'แก้ไขรายการ':'เพิ่มประชุม / อบรม-สัมมนา'}</h3>
-    <div class="f-group"><label>หัวข้อ *</label><input id="f_title" value="${esc(m.title)}" placeholder="เช่น ประชุมพิจารณาสำนวนคดี... / อบรมหลักสูตร..."></div>
+    <div class="f-group"><label>หัวข้อ *</label><input id="f_title" value="${esc(m.title)}" placeholder="เช่น ประชุมข้อราชการ... / อบรมหลักสูตร..."></div>
     <div class="f-group"><label>ลักษณะ</label><select id="f_type">
       <option value="meet" ${m.type!=='sem'?'selected':''}>ประชุม (วันเดียว)</option>
       <option value="sem" ${m.type==='sem'?'selected':''}>อบรม/สัมมนา (อาจมีหลายวัน)</option>
@@ -703,8 +769,12 @@ function saveMeet(id){
   if(dateEnd && dateEnd < date){alert('วันสิ้นสุดต้องไม่ก่อนวันเริ่ม');return;}
   const obj = {id:id||uid(), title, type:gv('f_type'), date, dateEnd, time:gv('f_time'),
                place:gv('f_place'), chair:gv('f_chair'), coord:gv('f_coord'), note:gv('f_note'), cat:gv('f_cat')};
-  if(id){ const i=DB.meetings.findIndex(x=>x.id===id); DB.meetings[i]=obj; }
-  else DB.meetings.push(obj);
+  if(id){
+    const i=DB.meetings.findIndex(x=>x.id===id);
+    obj.orders = DB.meetings[i].orders || [];   // คงข้อสั่งการเดิมไว้
+    DB.meetings[i]=obj;
+  }
+  else { obj.orders = []; DB.meetings.push(obj); }
   closeSheet(); save(); renderAll();
 }
 function delMeet(id){
@@ -712,9 +782,107 @@ function delMeet(id){
   DB.meetings = DB.meetings.filter(x=>x.id!==id);
   save(); renderAll();
 }
+/* ── ระบบข้อสั่งการที่ประชุม (แนวทาง C) ── */
+function openOrderForm(meetId, orderId){
+  const m = DB.meetings.find(x=>x.id===meetId); if(!m) return;
+  m.orders = m.orders || [];
+  const o = m.orders.find(x=>x.id===orderId) || {text:'',doer:'',due:''};
+  openSheet(`
+    <h3>${orderId?'แก้ไขข้อสั่งการ':'เพิ่มข้อสั่งการ'}</h3>
+    <p class="meta" style="margin-bottom:10px">มติ/ข้อสั่งการจากการประชุม "<b>${esc(m.title)}</b>"</p>
+    <div class="f-group"><label>เนื้อหาข้อสั่งการ *</label><textarea id="o_text" placeholder="เช่น เร่งรัดจัดทำรายงานเสนอผู้บังคับบัญชา">${esc(o.text)}</textarea></div>
+    <div class="f-group"><label>ผู้ปฏิบัติ <small>(หลายหน่วยคั่นด้วย , — หน่วยแรกคือเจ้าภาพ)</small></label><input id="o_doer" value="${esc(o.doer||'')}" placeholder="เช่น ฝ่ายสืบสวน, ฝ่ายสอบสวน"></div>
+    <div class="f-group"><label>กำหนดส่ง</label><input type="date" id="o_due" value="${o.due||''}"></div>
+    <div class="sheet-actions">
+      <button class="btn ghost" onclick="closeSheet()">ยกเลิก</button>
+      <button class="btn primary" onclick="saveOrder('${meetId}','${orderId||''}')">บันทึก</button>
+    </div>`);
+}
+function saveOrder(meetId, orderId){
+  const text = gv('o_text'); if(!text){alert('กรุณาระบุเนื้อหาข้อสั่งการ');return;}
+  const m = DB.meetings.find(x=>x.id===meetId); if(!m) return;
+  m.orders = m.orders || [];
+  const fields = {text, doer:gv('o_doer'), due:gv('o_due')};
+  if(orderId){
+    const o = m.orders.find(x=>x.id===orderId);
+    Object.assign(o, fields);
+  } else {
+    m.orders.push({id:uid(), ...fields, workId:null});
+  }
+  closeSheet(); save(); renderMeetings();
+}
+function delOrder(meetId, orderId){
+  const m = DB.meetings.find(x=>x.id===meetId); if(!m) return;
+  if(!confirm('ลบข้อสั่งการนี้?')) return;
+  m.orders = (m.orders||[]).filter(x=>x.id!==orderId);
+  save(); renderMeetings();
+}
+/* สร้างงานจากข้อสั่งการ 1 ข้อ */
+function makeWorkFromOrder(m, o){
+  const ref = `📌 จากการประชุม "${m.title}" (${thDate(m.date,true)})`;
+  const doers = (o.doer||'').split(',').map(s=>s.trim()).filter(Boolean);
+  const leader = doers[0] || (m.chair||'');           // เจ้าภาพ = หน่วยแรก
+  const others = doers.slice(1);
+  const wid = uid();
+  DB.works.push({
+    id: wid,
+    title: o.text,
+    caseno: '',
+    leader: leader,
+    coord: m.coord || '',
+    due: o.due || '',
+    deadline: false,
+    urgent: true,
+    important: false,
+    cat: 4,
+    note: ref + (others.length?`\nหน่วยร่วม: ${others.join(', ')}`:'') + (m.note?`\nวาระ/หมายเหตุ: ${m.note}`:''),
+    tasks: []
+  });
+  o.workId = wid;   // ทำเครื่องหมายว่าส่งเป็นงานแล้ว
+  return wid;
+}
+/* ส่งข้อสั่งการ 1 ข้อ เข้างาน */
+function orderToWork(meetId, orderId){
+  const m = DB.meetings.find(x=>x.id===meetId); if(!m) return;
+  const o = (m.orders||[]).find(x=>x.id===orderId); if(!o || o.workId) return;
+  makeWorkFromOrder(m, o);
+  save(); renderAll();
+  alert('สร้างงานจากข้อสั่งการแล้ว — ดูได้ที่แท็บ "งาน" และจัดลำดับใน Matrix');
+}
+/* ส่งข้อสั่งการที่ยังไม่ส่ง ทั้งหมดเข้างาน */
+function allOrdersToWork(meetId){
+  const m = DB.meetings.find(x=>x.id===meetId); if(!m) return;
+  const pending = (m.orders||[]).filter(o=>!o.workId);
+  if(!pending.length) return;
+  if(!confirm(`ส่งข้อสั่งการ ${pending.length} ข้อ เข้าเป็นงานทั้งหมด?`)) return;
+  pending.forEach(o=>makeWorkFromOrder(m, o));
+  save(); renderAll();
+  alert(`สร้างงาน ${pending.length} รายการแล้ว — ดูได้ที่แท็บ "งาน"`);
+}
 
-/* ─────────── งาน / สำนวน ─────────── */
+
+
+/* ─────────── งาน ─────────── */
 function allDone(w){ return w.tasks.length>0 && w.tasks.every(t=>t.done); }
+
+/* ── Eisenhower: คำนวณสีจาก urgent/important (ใช้ร่วมกับการแสดงผลเดิม) ──
+   ด่วน+สำคัญ → แดง(r) · สำคัญอย่างเดียว → เหลือง(y) · ด่วนอย่างเดียว → เขียว(g) · ไม่ใช่ทั้งคู่ → น้ำเงิน(n) */
+function workPrio(w){
+  const u = !!w.urgent, im = !!w.important;
+  if(u && im) return 'r';
+  if(im) return 'y';
+  if(u) return 'g';
+  return 'n';
+}
+/* ช่อง Matrix ที่งานสังกัด: 1=ทำเลย 2=วางแผน 3=รีบเคลียร์ 4=ทำทีหลัง */
+function workQuad(w){
+  const u = !!w.urgent, im = !!w.important;
+  if(u && im) return 1;
+  if(!u && im) return 2;
+  if(u && !im) return 3;
+  return 4;
+}
+
 function renderChips(){
   const counts = {};
   DB.works.forEach(w=>counts[w.cat]=(counts[w.cat]||0)+1);
@@ -738,10 +906,10 @@ function renderWorks(){
     box.innerHTML = `<div class="empty">ยังไม่มีงานในหมวดนี้<br>กด "+ เพิ่มงาน" เพื่อเริ่มบันทึก</div>`;
     return;
   }
-
+  // เรียง: แดง → เหลือง → เขียว → น้ำเงิน(ไม่ระบุ) แล้วตามกำหนดส่งใกล้สุด
   const PR = {r:0,y:1,g:2,n:3};
   const byPrioDue = (a,b)=>{
-    const pa=PR[a.prio]??3, pb=PR[b.prio]??3;
+    const pa=PR[workPrio(a)]??3, pb=PR[workPrio(b)]??3;
     if(pa!==pb) return pa-pb;
     const na=daysUntil(a.due), nb=daysUntil(b.due);
     if(na===null&&nb===null) return 0;
@@ -749,44 +917,38 @@ function renderWorks(){
     return na-nb;
   };
 
-  // กรณีกรองพิเศษ: แสดงเดี่ยว ไม่แบ่งกลุ่ม
+  // กรณีกดกรองพิเศษ: แสดงเดี่ยว ไม่แบ่งกลุ่ม
   if(activeCat==='overdue' || activeCat==='done'){
     list.sort(byPrioDue);
     box.innerHTML = list.map(w=>workCardHTML(w)).join('');
     return;
   }
 
-  // แบ่ง 3 กลุ่ม: งานปกติ / เกินกำหนด / เสร็จแล้ว
+  // แบ่ง 3 กลุ่ม: งานปกติ (บน) → เกินกำหนด (กลาง) → เสร็จแล้ว (ล่าง)
   const active  = list.filter(w=>!allDone(w) && !(daysUntil(w.due)!==null && daysUntil(w.due)<0));
   const overdue = list.filter(w=>!allDone(w) && daysUntil(w.due)!==null && daysUntil(w.due)<0);
   const done    = list.filter(w=>allDone(w));
-
-  active.sort(byPrioDue);
-  overdue.sort(byPrioDue);
-  done.sort(byPrioDue);
+  active.sort(byPrioDue); overdue.sort(byPrioDue); done.sort(byPrioDue);
 
   let html = '';
   if(active.length)  html += active.map(w=>workCardHTML(w)).join('');
   if(overdue.length) html += `<div class="work-divider overdue"><span>⚠️ เกินกำหนด (${overdue.length})</span></div>` + overdue.map(w=>workCardHTML(w)).join('');
   if(done.length)    html += `<div class="work-divider done"><span>✅ เสร็จแล้ว (${done.length})</span></div>` + done.map(w=>workCardHTML(w)).join('');
-
-  box.innerHTML = html || `<div class="empty">ยังไม่มีงานในหมวดนี้</div>`;
+  box.innerHTML = html;
 }
-
 function workCardHTML(w){
   const cat = CATS.find(c=>c.id==w.cat);
   const doneT = w.tasks.filter(t=>t.done), todoT = w.tasks.filter(t=>!t.done);
   const pct = w.tasks.length? Math.round(doneT.length/w.tasks.length*100) : 0;
   const n = daysUntil(w.due);
-  const prio = w.prio||'n';
+  const prio = workPrio(w);
   const cls = allDone(w)?'done-all':(prio==='r'||(n!==null&&n<0)?'overdue':(prio==='y'||(n!==null&&n<=7)?'soon':''));
-  const kps = (w.team||'').split(',').map(s=>s.trim()).filter(Boolean);
+  const QLBL = {1:'🔴 ทำเลย',2:'🔵 วางแผนทำ',3:'🟡 รีบเคลียร์',4:'⚪ ทำทีหลัง'};
   return `<div class="card ${cls}" id="card-w-${w.id}">
     ${!allDone(w)?dueBadge(w.due, w.deadline):'<span class="due ok">เสร็จสมบูรณ์</span>'}
-    <div class="h-row"><span class="prio ${prio}" title="ความเร่งด่วน"></span><h3>${esc(w.title)}</h3></div>
-    ${w.caseno?`<div class="meta">เลขสำนวน/เรื่อง: <b>${esc(w.caseno)}</b></div>`:''}
+    <div class="h-row"><span class="prio ${prio}" title="${QLBL[workQuad(w)]}"></span><h3>${esc(w.title)}</h3></div>
+    ${w.caseno?`<div class="meta">เลขที่หนังสือ/อ้างอิง: <b>${esc(w.caseno)}</b></div>`:''}
     <div class="meta">หัวหน้าผู้สั่งการ: <span class="leader-tag">${esc(w.leader||'—')}</span></div>
-    ${kps.length?`<div class="team-line">ทีมงาน (คีย์แมน): ${kps.map(k=>`<span class="kp">${esc(k)}</span>`).join('')}</div>`:''}
     ${w.coord?`<div class="meta">📞 ผู้ประสานงาน: <b>${esc(w.coord)}</b></div>`:''}
     ${w.due?`<div class="meta">${w.deadline?'🚨 <b style="color:var(--red)">เส้นตาย (deadline)</b>':'กำหนดส่ง'}: <b>${thDate(w.due,true)}</b></div>`:''}
     ${w.note?`<div class="meta">📝 ${esc(w.note)}</div>`:''}
@@ -832,21 +994,18 @@ function delTask(wid,tid){
   w.tasks = w.tasks.filter(x=>x.id!==tid);
   save(); renderWorks();
 }
-function openWorkForm(id){
-  const w = DB.works.find(x=>x.id===id) || {title:'',caseno:'',leader:'',team:'',coord:'',due:'',deadline:false,prio:'n',cat:1};
+function openWorkForm(id, prefill){
+  const w = DB.works.find(x=>x.id===id) || Object.assign({title:'',caseno:'',leader:'',coord:'',due:'',deadline:false,urgent:false,important:false,cat:1,note:''}, prefill||{});
   openSheet(`
     <h3>${id?'แก้ไขข้อมูลงาน':'เพิ่มงานใหม่'}</h3>
-    <div class="f-group"><label>ชื่องาน / เรื่อง *</label><input id="f_title" value="${esc(w.title)}" placeholder="เช่น ทำความเห็นแย้งคดี..."></div>
-    <div class="f-group"><label>เลขสำนวน / เลขเรื่อง</label><input id="f_caseno" value="${esc(w.caseno||'')}"></div>
+    <div class="f-group"><label>ชื่องาน / เรื่อง *</label><input id="f_title" value="${esc(w.title)}" placeholder="เช่น จัดทำรายงานประจำเดือน..."></div>
+    <div class="f-group"><label>เลขที่หนังสือ / อ้างอิง</label><input id="f_caseno" value="${esc(w.caseno||'')}"></div>
     <div class="f-group"><label>ประเภทงาน *</label><select id="f_cat">${CATS.map(c=>`<option value="${c.id}" ${c.id==w.cat?'selected':''}>${c.name}</option>`).join('')}</select></div>
-    <div class="f-group"><label>ความเร่งด่วน</label><select id="f_prio">
-      <option value="n" ${w.prio==='n'||!w.prio?'selected':''}>🔵 น้ำเงิน — ไม่ระบุความเร่งด่วน</option>
-      <option value="g" ${w.prio==='g'?'selected':''}>🟢 เขียว — ปกติ</option>
-      <option value="y" ${w.prio==='y'?'selected':''}>🟡 เหลือง — เร่ง</option>
-      <option value="r" ${w.prio==='r'?'selected':''}>🔴 แดง — ด่วนที่สุด</option>
-    </select></div>
+    <div class="f-group"><label>การจัดลำดับ (Eisenhower Matrix)</label>
+      <label class="f-check"><input type="checkbox" id="f_urgent" ${w.urgent?'checked':''}> 🔥 เร่งด่วน (มีเวลาบีบ ต้องรีบทำ)</label>
+      <label class="f-check"><input type="checkbox" id="f_important" ${w.important?'checked':''}> ⭐ สำคัญ (ส่งผลมาก/กระทบเป้าหมาย)</label>
+    </div>
     <div class="f-group"><label>หัวหน้าผู้สั่งการ</label><input id="f_leader" value="${esc(w.leader||'')}"></div>
-    <div class="f-group"><label>ทีมงาน / คีย์แมน <small>(คั่นด้วยเครื่องหมายจุลภาค ,)</small></label><input id="f_team" value="${esc(w.team||'')}" placeholder="เช่น พ.ต.ท.สมชาย, ร.ต.อ.สมหญิง"></div>
     <div class="f-group"><label>ผู้ประสานงาน <small>(ชื่อ–เบอร์ติดต่อ)</small></label><input id="f_coord" value="${esc(w.coord||'')}" placeholder="เช่น คุณสมศรี 08x-xxx-xxxx"></div>
     <div class="f-group"><label>กำหนดเวลาส่ง</label><input type="date" id="f_due" value="${w.due||''}"></div>
     <div class="f-group"><label class="f-check"><input type="checkbox" id="f_deadline" ${w.deadline?'checked':''}> เป็นเส้นตาย (deadline) เลื่อนไม่ได้</label></div>
@@ -859,8 +1018,10 @@ function openWorkForm(id){
 function saveWork(id){
   const title = gv('f_title'); if(!title){alert('กรุณาระบุชื่องาน');return;}
   const dl = document.getElementById('f_deadline').checked;
-  const fields = {title,caseno:gv('f_caseno'),leader:gv('f_leader'),team:gv('f_team'),coord:gv('f_coord'),
-                  due:gv('f_due'),deadline:dl,prio:gv('f_prio'),cat:gv('f_cat'),note:gv('f_note')};
+  const urgent = document.getElementById('f_urgent').checked;
+  const important = document.getElementById('f_important').checked;
+  const fields = {title,caseno:gv('f_caseno'),leader:gv('f_leader'),coord:gv('f_coord'),
+                  due:gv('f_due'),deadline:dl,urgent,important,cat:gv('f_cat'),note:gv('f_note')};
   if(id){
     const w = DB.works.find(x=>x.id===id);
     Object.assign(w, fields);
@@ -924,26 +1085,26 @@ function delPlan(id){
 }
 function planToWork(id){
   const p = DB.plans.find(x=>x.id===id);
-  DB.works.push({id:uid(), title:p.title, caseno:'', leader:'', team:'', coord:'', due:'', deadline:false, prio:'g', cat:p.cat,
+  DB.works.push({id:uid(), title:p.title, caseno:'', leader:'', coord:'', due:'', deadline:false, urgent:false, important:false, cat:p.cat,
                  tasks: p.prep? p.prep.split('\n').map(s=>s.trim()).filter(Boolean).map(s=>({id:uid(),text:s,done:false})) : []});
   DB.plans = DB.plans.filter(x=>x.id!==id);
   save(); renderAll(); showPage('work');
 }
 
 /* ─────────── แดชบอร์ด ─────────── */
-let dashView = 'cal';
+let dashView = 'matrix';
 let calRef = (()=>{ const d=new Date(); d.setDate(1); d.setHours(0,0,0,0); return d; })();
 let calSel = todayStr();
 
 function setDash(v){ dashView=v; renderDash(); }
 function renderDash(){
-  ['cal','prio','leader'].forEach(v=>{
+  ['matrix','cal','leader'].forEach(v=>{
     const el=document.getElementById('dchip-'+v);
     if(el) el.classList.toggle('active', dashView===v);
   });
   const body=document.getElementById('dashBody');
   if(!body) return;
-  body.innerHTML = dashView==='cal' ? calHTML() : (dashView==='prio' ? prioHTML() : leaderHTML());
+  body.innerHTML = dashView==='matrix' ? matrixHTML() : (dashView==='cal' ? calHTML() : leaderHTML());
 }
 
 function eventMap(){
@@ -984,7 +1145,7 @@ function calHTML(){
     }
     const w=e.w;
     return `<div class="card click-card ${w.deadline?'overdue':'soon'}" style="margin-bottom:8px" onclick="gotoItem('w','${w.id}')">
-      <div class="h-row" style="padding-right:0"><span class="prio ${w.prio||'n'}"></span><h3 style="font-size:.95rem">${esc(w.title)}</h3></div>
+      <div class="h-row" style="padding-right:0"><span class="prio ${workPrio(w)}"></span><h3 style="font-size:.95rem">${esc(w.title)}</h3></div>
       <div class="meta">${w.deadline?'🚨 เส้นตาย':'กำหนดส่ง'}${w.leader?' · สั่งการ: '+esc(w.leader):''} <b style="color:var(--navy)">› ดูรายละเอียด</b></div></div>`;
   }).join('') : (holCard?'':`<div class="empty" style="padding:18px">ไม่มีรายการในวันที่เลือก</div>`);
   return `<div class="cal">
@@ -1017,22 +1178,37 @@ function gotoItem(kind,id){
 
 function miniWorkRow(w){
   return `<div class="card click-card" style="margin-bottom:8px" onclick="gotoItem('w','${w.id}')">
-    <div class="h-row" style="padding-right:0"><span class="prio ${w.prio||'n'}"></span><h3 style="font-size:.95rem">${esc(w.title)}</h3></div>
+    <div class="h-row" style="padding-right:0"><span class="prio ${workPrio(w)}"></span><h3 style="font-size:.95rem">${esc(w.title)}</h3></div>
     <div class="meta">${w.leader?'สั่งการ: <b>'+esc(w.leader)+'</b>':''}${w.due?` · ${w.deadline?'🚨 เส้นตาย':'ส่ง'} ${thDate(w.due)}`:''}${w.tasks.length?` · เสร็จ ${w.tasks.filter(t=>t.done).length}/${w.tasks.length}`:''} <b style="color:var(--navy)">› ดูรายละเอียด</b></div>
   </div>`;
 }
-function prioHTML(){
-  const g={r:[],y:[],g:[],n:[]};
-  DB.works.forEach(w=>{ if(!allDone(w)) g[w.prio&&g[w.prio]?w.prio:'n'].push(w); });
+function matrixHTML(){
+  // 4 ช่อง: 1 ทำเลย / 2 วางแผน / 3 รีบเคลียร์ / 4 ทำทีหลัง
+  const q={1:[],2:[],3:[],4:[]};
+  DB.works.forEach(w=>{ if(!allDone(w)) q[workQuad(w)].push(w); });
   const byDue=(a,b)=>{ const na=daysUntil(a.due), nb=daysUntil(b.due);
     if(na===null&&nb===null)return 0; if(na===null)return 1; if(nb===null)return -1; return na-nb; };
-  const sec=(key,name,color)=>{
-    const arr=g[key].sort(byDue);
-    return `<div class="dash-h"><span class="dotk" style="background:${color}"></span>${name} (${arr.length} งาน)</div>`+
-      (arr.length? arr.map(miniWorkRow).join('') : `<div class="empty" style="padding:14px;margin-bottom:8px">ไม่มีงานในกลุ่มนี้</div>`);
+  Object.keys(q).forEach(k=>q[k].sort(byDue));
+  const cell=(qn,title,sub,color,bg)=>{
+    const arr=q[qn];
+    return `<div class="mx-cell" style="border-top:3px solid ${color};background:${bg}">
+      <div class="mx-head" style="color:${color}">${title} <span class="mx-count">${arr.length}</span></div>
+      <div class="mx-sub">${sub}</div>
+      ${arr.length? arr.map(w=>`
+        <div class="mx-item click-card" onclick="gotoItem('w','${w.id}')">
+          <b>${esc(w.title)}</b>
+          <span class="mx-meta">${w.due?(w.deadline?'🚨 ':'📅 ')+thDate(w.due):''}${w.leader?' · '+esc(w.leader):''}</span>
+        </div>`).join('') : `<div class="mx-empty">— ว่าง —</div>`}
+    </div>`;
   };
-  return sec('r','แดง — ด่วนที่สุด','#d12f36') + sec('y','เหลือง — เร่ง','#e0a800')
-       + sec('g','เขียว — ปกติ','#2e9e54') + sec('n','น้ำเงิน — งานไม่ระบุความเร่งด่วน','#2a6fb0');
+  const done = DB.works.filter(allDone).length;
+  return `<div class="mx-grid">
+    ${cell(1,'🔴 ทำเลย','ด่วน + สำคัญ','#d12f36','#fbeaea')}
+    ${cell(2,'🔵 วางแผนทำ','สำคัญ แต่ไม่ด่วน','#2a6fb0','#e8edf5')}
+    ${cell(3,'🟡 รีบเคลียร์','ด่วน แต่ไม่สำคัญ','#9a6700','#fdf3dc')}
+    ${cell(4,'⚪ ทำทีหลัง','ไม่ด่วน + ไม่สำคัญ','#6b7280','#f3f3f1')}
+  </div>
+  <div class="meta" style="margin-top:10px;text-align:center">แตะที่งานเพื่อดูรายละเอียด · ตั้งค่า "เร่งด่วน/สำคัญ" ได้ที่ปุ่มแก้ไขงาน${done?` · เสร็จแล้ว ${done} งาน`:''}</div>`;
 }
 
 let leaderSel = null;
@@ -1077,7 +1253,7 @@ function leaderHTML(){
   // dashboard ย่อย: การ์ดรายชื่อผู้สั่งการ
   return `<div class="person-grid">`+keys.map(k=>{
     const d=map[k];
-    const worst = d.w.some(w=>w.prio==='r')?'r':(d.w.some(w=>w.prio==='y')?'y':(d.w.some(w=>w.prio==='g')?'g':'n'));
+    const worst = d.w.some(w=>workPrio(w)==='r')?'r':(d.w.some(w=>workPrio(w)==='y')?'y':(d.w.some(w=>workPrio(w)==='g')?'g':'n'));
     return `<div class="person" onclick="leaderSel='${esc(k).replace(/'/g,"\\'")}';renderDash()">
       <b><span class="prio ${worst}" style="width:9px;height:9px;margin:0 5px 0 0"></span>${esc(k)}</b>
       <div class="nums">
@@ -1139,9 +1315,6 @@ function renderAll(){
 }
 
 /* ─────────── เริ่มต้น ─────────── */
-const now = new Date();
-document.getElementById('todayLine').textContent =
-  `วันนี้ วัน${THD[now.getDay()]}ที่ ${now.getDate()} ${THM[now.getMonth()]} ${now.getFullYear()+543}`;
 load();
 </script>
 </body>
