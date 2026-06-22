@@ -241,6 +241,11 @@ header .tagline b{color:var(--gold);font-weight:700;font-style:normal}
 .card.done-all h3{text-decoration:line-through;color:var(--muted)}
 /* ── checkbox ปิดงานที่หัวการ์ด ── */
 .work-done-check{width:19px;height:19px;margin-top:4px;margin-right:3px;accent-color:var(--green);flex-shrink:0;cursor:pointer}
+/* ── ประชุมที่ผูกกับงาน ── */
+.linked-meets{margin-top:8px;font-size:.86rem;color:var(--muted)}
+.linked-meet{display:inline-block;background:var(--navy-soft);color:var(--navy);border:1px solid #c6d3e6;border-radius:7px;padding:2px 9px;margin:3px 5px 0 0;cursor:pointer;font-weight:500}
+.linked-meet:active{box-shadow:0 0 0 2px var(--gold)}
+.meet-picker{max-height:170px;overflow-y:auto;border:1px solid var(--line);border-radius:8px;padding:4px 9px;background:#fbfaf7}
 /* ── Eisenhower Matrix grid ── */
 .mx-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .mx-cell{border:1px solid var(--line);border-radius:var(--radius);padding:10px 11px;min-height:120px}
@@ -782,6 +787,7 @@ function saveMeet(id){
 function delMeet(id){
   if(!confirm('ลบรายการประชุมนี้?')) return;
   DB.meetings = DB.meetings.filter(x=>x.id!==id);
+  DB.works.forEach(w=>{ if(w.meetings) w.meetings = w.meetings.filter(mid=>mid!==id); });
   save(); renderAll();
 }
 /* ── ระบบข้อสั่งการที่ประชุม (แนวทาง C) ── */
@@ -954,6 +960,12 @@ function workCardHTML(w){
   const prio = workPrio(w);
   const cls = allDone(w)?'done-all':(prio==='r'||(n!==null&&n<0)?'overdue':(prio==='y'||(n!==null&&n<=7)?'soon':''));
   const QLBL = {1:'🔴 ทำเลย',2:'🔵 วางแผนทำ',3:'🟡 รีบเคลียร์',4:'⚪ ทำทีหลัง'};
+  const linkM = (w.meetings||[]).map(id=>DB.meetings.find(m=>m.id===id)).filter(Boolean);
+  const linkHTML = linkM.length
+    ? `<div class="linked-meets">🗓️ <b>ประชุมที่เกี่ยวข้อง:</b><br>`+
+      linkM.map(m=>`<span class="linked-meet" onclick="event.stopPropagation();gotoItem('m','${m.id}')">${esc(m.title)} (${thDate(m.date)}${m.time?' '+m.time+' น.':''})</span>`).join('')+
+      `</div>`
+    : '';
   return `<div class="card ${cls}" id="card-w-${w.id}">
     ${!allDone(w)?dueBadge(w.due, w.deadline):'<span class="due ok">เสร็จสมบูรณ์</span>'}
     <div class="h-row"><input type="checkbox" class="work-done-check" ${allDone(w)?'checked':''} onclick="event.stopPropagation()" onchange="toggleWorkDone('${w.id}')" title="ทำเครื่องหมายว่าเสร็จ / ยังไม่เสร็จ"><span class="prio ${prio}" title="${QLBL[workQuad(w)]}"></span><h3>${esc(w.title)}</h3></div>
@@ -962,6 +974,7 @@ function workCardHTML(w){
     ${w.coord?`<div class="meta">📞 ผู้ประสานงาน: <b>${esc(w.coord)}</b></div>`:''}
     ${w.due?`<div class="meta">${w.deadline?'🚨 <b style="color:var(--red)">เส้นตาย (deadline)</b>':'กำหนดส่ง'}: <b>${thDate(w.due,true)}</b></div>`:''}
     ${w.note?`<div class="meta">📝 ${esc(w.note)}</div>`:''}
+    ${linkHTML}
     ${cat?`<span class="badge cat-${cat.id}">${cat.name}</span>`:''}
     ${w.tasks.length?`<div class="progress"><i style="width:${pct}%"></i></div>`:''}
     <div class="tasks">
@@ -1028,6 +1041,12 @@ function openWorkForm(id, prefill){
     <div class="f-group"><label>กำหนดเวลาส่ง</label><input type="date" id="f_due" value="${w.due||''}"></div>
     <div class="f-group"><label class="f-check"><input type="checkbox" id="f_deadline" ${w.deadline?'checked':''}> เป็นเส้นตาย (deadline) เลื่อนไม่ได้</label></div>
     <div class="f-group"><label>หมายเหตุ / รายละเอียดเพิ่มเติม</label><textarea id="f_note" placeholder="เช่น ประเด็นข้อกฎหมาย แนวทางการพิจารณา ข้อสังเกต">${esc(w.note||'')}</textarea></div>
+    <div class="f-group"><label>ประชุมที่เกี่ยวข้อง <small>(เลือกได้หลายรายการ)</small></label>
+      ${DB.meetings.length
+        ? `<div class="meet-picker">`+[...DB.meetings].sort((a,b)=>(a.date+(a.time||''))<(b.date+(b.time||''))?-1:1)
+            .map(mm=>`<label class="f-check"><input type="checkbox" class="mlink" value="${mm.id}" ${(w.meetings||[]).includes(mm.id)?'checked':''}> ${esc(mm.title)} <small style="color:var(--muted);font-weight:400">· ${thDate(mm.date)}${mm.time?' '+mm.time+' น.':''}</small></label>`).join('')+`</div>`
+        : `<div class="meta">ยังไม่มีประชุมในระบบ — สร้างที่แท็บ "ประชุม" ก่อน แล้วกลับมาผูกกับงานนี้ได้</div>`}
+    </div>
     <div class="sheet-actions">
       <button class="btn ghost" onclick="closeSheet()">ยกเลิก</button>
       <button class="btn primary" onclick="saveWork('${id||''}')">บันทึก</button>
@@ -1038,8 +1057,9 @@ function saveWork(id){
   const dl = document.getElementById('f_deadline').checked;
   const urgent = document.getElementById('f_urgent').checked;
   const important = document.getElementById('f_important').checked;
+  const meetings = [...document.querySelectorAll('.mlink:checked')].map(el=>el.value);
   const fields = {title,caseno:gv('f_caseno'),leader:gv('f_leader'),coord:gv('f_coord'),
-                  due:gv('f_due'),deadline:dl,urgent,important,cat:gv('f_cat'),note:gv('f_note')};
+                  due:gv('f_due'),deadline:dl,urgent,important,cat:gv('f_cat'),note:gv('f_note'),meetings};
   if(id){
     const w = DB.works.find(x=>x.id===id);
     Object.assign(w, fields);
