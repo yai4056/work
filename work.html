@@ -239,6 +239,8 @@ header .tagline b{color:var(--gold);font-weight:700;font-style:normal}
 .work-divider.done::before,.work-divider.done::after{background:#b2dfc0}
 /* ── การ์ดเสร็จแล้ว: ขีดฆ่าชื่องาน ── */
 .card.done-all h3{text-decoration:line-through;color:var(--muted)}
+/* ── checkbox ปิดงานที่หัวการ์ด ── */
+.work-done-check{width:19px;height:19px;margin-top:4px;margin-right:3px;accent-color:var(--green);flex-shrink:0;cursor:pointer}
 /* ── Eisenhower Matrix grid ── */
 .mx-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .mx-cell{border:1px solid var(--line);border-radius:var(--radius);padding:10px 11px;min-height:120px}
@@ -863,7 +865,15 @@ function allOrdersToWork(meetId){
 
 
 /* ─────────── งาน ─────────── */
-function allDone(w){ return w.tasks.length>0 && w.tasks.every(t=>t.done); }
+/* งานถือว่าเสร็จเมื่อ: ติ๊กหัวการ์ดด้วยมือ (done=true) หรือ subtask ครบ
+   · done===true  → ปิดด้วยมือ (override)
+   · done===false → บังคับเปิด แม้ subtask จะครบ (กดหัวการ์ดออก)
+   · ไม่มีค่า      → ยึดตาม subtask อัตโนมัติ (พฤติกรรมเดิม / ข้อมูลเก่าเข้ากันได้) */
+function allDone(w){
+  if(w.done === true) return true;
+  if(w.done === false) return false;
+  return w.tasks.length>0 && w.tasks.every(t=>t.done);
+}
 
 /* ── Eisenhower: คำนวณสีจาก urgent/important (ใช้ร่วมกับการแสดงผลเดิม) ──
    ด่วน+สำคัญ → แดง(r) · สำคัญอย่างเดียว → เหลือง(y) · ด่วนอย่างเดียว → เขียว(g) · ไม่ใช่ทั้งคู่ → น้ำเงิน(n) */
@@ -946,7 +956,7 @@ function workCardHTML(w){
   const QLBL = {1:'🔴 ทำเลย',2:'🔵 วางแผนทำ',3:'🟡 รีบเคลียร์',4:'⚪ ทำทีหลัง'};
   return `<div class="card ${cls}" id="card-w-${w.id}">
     ${!allDone(w)?dueBadge(w.due, w.deadline):'<span class="due ok">เสร็จสมบูรณ์</span>'}
-    <div class="h-row"><span class="prio ${prio}" title="${QLBL[workQuad(w)]}"></span><h3>${esc(w.title)}</h3></div>
+    <div class="h-row"><input type="checkbox" class="work-done-check" ${allDone(w)?'checked':''} onclick="event.stopPropagation()" onchange="toggleWorkDone('${w.id}')" title="ทำเครื่องหมายว่าเสร็จ / ยังไม่เสร็จ"><span class="prio ${prio}" title="${QLBL[workQuad(w)]}"></span><h3>${esc(w.title)}</h3></div>
     ${w.caseno?`<div class="meta">เลขที่หนังสือ/อ้างอิง: <b>${esc(w.caseno)}</b></div>`:''}
     <div class="meta">หัวหน้าผู้สั่งการ: <span class="leader-tag">${esc(w.leader||'—')}</span></div>
     ${w.coord?`<div class="meta">📞 ผู้ประสานงาน: <b>${esc(w.coord)}</b></div>`:''}
@@ -979,9 +989,17 @@ function addTask(wid){
   const inp = document.getElementById('nt_'+wid);
   const v = inp.value.trim(); if(!v) return;
   const w = DB.works.find(x=>x.id===wid);
+  // ถ้าเคยปิดงานด้วยมือไว้ แล้วมาเพิ่มงานย่อยใหม่ → กลับไปโหมดอัตโนมัติ (เปิดงาน)
+  if(w.done === true) delete w.done;
   w.tasks.push({id:uid(), text:v, done:false});
-  save(); renderWorks(); renderAlerts();
+  save(); renderChips(); renderWorks(); renderAlerts();
   const ni = document.getElementById('nt_'+wid); if(ni) ni.focus();
+}
+/* ติ๊กหัวการ์ด: สลับสถานะเสร็จด้วยมือ (มีน้ำหนักเหนือ subtask) */
+function toggleWorkDone(wid){
+  const w = DB.works.find(x=>x.id===wid);
+  w.done = !allDone(w);   // คำนวณสถานะปัจจุบันก่อน แล้วบันทึกค่าตรงข้ามแบบชัดเจน
+  save(); renderChips(); renderWorks(); renderAlerts(); renderDash();
 }
 function toggleTask(wid,tid){
   const w = DB.works.find(x=>x.id===wid);
