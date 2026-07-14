@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>เช็คคุณสมบัติผู้สมัครตุลาการประจำศาลปกครองชั้นต้น</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+Thai:wght@400;500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700&display=swap');
+
+  :root{
+    --navy:#16233f;
+    --navy-2:#1f3358;
+    --gold:#b6913c;
+    --gold-light:#e8d9b0;
+    --cream:#f7f4ec;
+    --paper:#fffdf8;
+    --ink:#242b38;
+    --ink-soft:#5b6272;
+    --line:#e2dbc9;
+    --ok:#2f6f4e;
+    --ok-bg:#e9f3ec;
+    --miss:#8a2f2f;
+    --miss-bg:#f8ecec;
+    --plum:#5a3a63;
+    --plum-bg:#f2ecf3;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--cream);
+    background-image:
+      radial-gradient(circle at 15% 8%, rgba(182,145,60,0.07), transparent 40%),
+      radial-gradient(circle at 90% 90%, rgba(22,35,63,0.05), transparent 45%);
+    font-family:'Noto Sans Thai','Noto Serif Thai',serif;
+    color:var(--ink);
+    min-height:100vh;
+    padding-bottom:120px;
+  }
+
+  .seal-bar{
+    height:6px;
+    background:repeating-linear-gradient(90deg, var(--navy) 0 24px, var(--gold) 24px 32px);
+  }
+
+  header.hero{
+    background:linear-gradient(180deg, var(--navy) 0%, var(--navy-2) 100%);
+    color:var(--gold-light);
+    padding:36px 20px 30px;
+    text-align:center;
+    position:relative;
+    overflow:hidden;
+  }
+  .eyebrow{
+    letter-spacing:0.25em;
+    font-size:0.72rem;
+    color:var(--gold);
+    text-transform:uppercase;
+    font-weight:600;
+    margin-bottom:10px;
+  }
+  h1{
+    font-family:'Noto Serif Thai',serif;
+    font-size:1.5rem;
+    font-weight:700;
+    margin:0 0 6px;
+    color:#fdf9ee;
+    line-height:1.4;
+  }
+  .subtitle{
+    font-size:0.86rem;
+    color:#c9d2e4;
+    max-width:520px;
+    margin:0 auto;
+    line-height:1.6;
+  }
+
+  main{
+    max-width:640px;
+    margin:0 auto;
+    padding:22px 16px 0;
+  }
+
+  .stage-label{
+    font-size:0.74rem;
+    font-weight:700;
+    letter-spacing:0.05em;
+    color:var(--navy-2);
+    text-transform:uppercase;
+    margin:26px 2px 8px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .stage-label:first-child{margin-top:4px;}
+  .stage-label::before{
+    content:"";
+    width:16px;height:2px;
+    background:var(--gold);
+    display:inline-block;
+  }
+  .stage-label.plum{color:var(--plum);}
+
+  .section{
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:10px;
+    margin-bottom:18px;
+    overflow:hidden;
+    box-shadow:0 1px 2px rgba(22,35,63,0.04);
+  }
+  .section-head{
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+    padding:16px 18px 10px;
+    border-bottom:1px solid var(--line);
+    flex-wrap:wrap;
+  }
+  .section-num{
+    font-family:'Noto Serif Thai',serif;
+    font-weight:700;
+    color:var(--gold);
+    font-size:0.95rem;
+    flex-shrink:0;
+  }
+  .section-title{
+    font-weight:600;
+    font-size:1rem;
+    color:var(--navy);
+  }
+  .section-rule{
+    font-size:0.78rem;
+    color:var(--ink-soft);
+    padding:0 18px 12px;
+    line-height:1.55;
+    border-bottom:1px dashed var(--line);
+  }
+  .section-rule b{color:var(--navy-2);}
+
+  .path-tabs{
+    display:flex;
+    gap:8px;
+    padding:12px 18px 0;
+  }
+  .path-tab{
+    flex:1;
+    text-align:center;
+    padding:9px 8px;
+    border-radius:8px;
+    border:1.5px solid var(--line);
+    background:#fbf9f2;
+    font-size:0.8rem;
+    font-weight:600;
+    color:var(--ink-soft);
+    cursor:pointer;
+    transition:all 0.15s;
+  }
+  .path-tab.active{
+    border-color:var(--navy);
+    background:var(--navy);
+    color:#fdf9ee;
+  }
+
+  .status-row{
+    padding:12px 18px 0;
+  }
+  .status-label{
+    font-size:0.76rem;
+    color:var(--ink-soft);
+    margin-bottom:6px;
+  }
+  .status-tabs{display:flex;gap:8px;}
+  .status-tab{
+    flex:1;
+    text-align:center;
+    padding:8px 8px;
+    border-radius:8px;
+    border:1.5px solid var(--line);
+    background:#fbf9f2;
+    font-size:0.78rem;
+    font-weight:600;
+    color:var(--ink-soft);
+    cursor:pointer;
+    transition:all 0.15s;
+  }
+  .status-tab.active{
+    border-color:var(--gold);
+    background:var(--gold-light);
+    color:var(--navy);
+  }
+
+  .item.na{
+    cursor:default;
+    opacity:0.6;
+  }
+  .item.na .checkbox{
+    background:#eef1e8;
+    border-color:#cfd6c2;
+  }
+  .item.na .checkbox svg path{stroke:#7d8a6d;}
+  .na-tag{
+    display:inline-block;
+    font-size:0.66rem;
+    font-weight:700;
+    color:#6f7a5f;
+    background:#eef1e8;
+    padding:1px 7px;
+    border-radius:20px;
+    margin-left:6px;
+  }
+
+  .item{
+    display:flex;
+    align-items:flex-start;
+    gap:12px;
+    padding:13px 18px;
+    border-bottom:1px solid #f0ece0;
+    cursor:pointer;
+    transition:background 0.15s;
+  }
+  .item:last-child{border-bottom:none;}
+  .item:hover{background:#faf7ee;}
+
+  .checkbox{
+    width:22px;
+    height:22px;
+    border-radius:6px;
+    border:2px solid #c9c0a3;
+    flex-shrink:0;
+    margin-top:1px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition:all 0.15s;
+    background:#fff;
+  }
+  .item.checked .checkbox{
+    background:var(--navy);
+    border-color:var(--navy);
+  }
+  .section[data-group="worklog"] .item.checked .checkbox{
+    background:var(--plum);
+    border-color:var(--plum);
+  }
+  .checkbox svg{
+    width:14px;height:14px;
+    opacity:0;
+    transform:scale(0.5);
+    transition:all 0.15s;
+  }
+  .item.checked .checkbox svg{opacity:1;transform:scale(1);}
+
+  .item-text{
+    font-size:0.88rem;
+    line-height:1.55;
+    color:var(--ink);
+    flex:1;
+  }
+  .item.checked .item-text{color:var(--navy-2);}
+  .item-code{
+    color:var(--gold);
+    font-weight:700;
+    margin-left:4px;
+  }
+
+  .or-note, .and-note, .path-note{
+    display:inline-block;
+    font-size:0.68rem;
+    font-weight:600;
+    padding:2px 8px;
+    border-radius:20px;
+    margin-left:6px;
+    vertical-align:middle;
+  }
+  .or-note{background:#eef1f8;color:var(--navy-2);}
+  .and-note{background:#f8ecec;color:var(--miss);}
+  .path-note{background:var(--plum-bg);color:var(--plum);}
+
+  .group-progress{
+    padding:10px 18px 14px;
+    font-size:0.76rem;
+    color:var(--ink-soft);
+  }
+
+  /* work item note input */
+  .work-note-wrap{
+    padding:0 18px 14px 50px;
+    margin-top:-6px;
+  }
+  .work-note-wrap input{
+    width:100%;
+    font-family:inherit;
+    font-size:0.8rem;
+    padding:8px 10px;
+    border:1px solid var(--line);
+    border-radius:6px;
+    background:#fbf9f2;
+    color:var(--ink);
+  }
+  .work-note-wrap input::placeholder{color:#b3ac97;}
+  .work-note-wrap select{
+    width:100%;
+    font-family:inherit;
+    font-size:0.8rem;
+    padding:8px 10px;
+    border:1px solid var(--line);
+    border-radius:6px;
+    background:#fbf9f2;
+    color:var(--ink);
+    margin-bottom:8px;
+  }
+  .work-group-tag{
+    font-size:0.68rem;
+    font-weight:700;
+    color:var(--plum);
+    background:var(--plum-bg);
+    padding:1px 8px;
+    border-radius:20px;
+    margin-left:6px;
+  }
+
+  /* summary bar */
+  .summary-bar{
+    position:fixed;
+    bottom:0; left:0; right:0;
+    background:var(--paper);
+    border-top:2px solid var(--navy);
+    box-shadow:0 -4px 16px rgba(22,35,63,0.12);
+    padding:14px 18px;
+    z-index:50;
+  }
+  .summary-inner{
+    max-width:640px;
+    margin:0 auto;
+    display:flex;
+    align-items:center;
+    gap:14px;
+  }
+  .summary-text{flex:1;}
+  .summary-title{
+    font-weight:700;
+    font-size:0.95rem;
+  }
+  .summary-title.ok{color:var(--ok);}
+  .summary-title.miss{color:var(--miss);}
+  .summary-title.pending{color:var(--ink-soft);}
+  .summary-detail{
+    font-size:0.74rem;
+    color:var(--ink-soft);
+    margin-top:2px;
+    line-height:1.4;
+  }
+
+  .result-box{
+    margin:20px 0 8px;
+    padding:22px 20px;
+    border-radius:10px;
+    text-align:center;
+    font-family:'Noto Serif Thai',serif;
+    border:1px solid var(--line);
+    transition:all 0.2s;
+  }
+  .result-box.ok{background:var(--ok-bg);border-color:#bcdcc8;}
+  .result-box.miss{background:var(--miss-bg);border-color:#e4c2c2;}
+  .result-box.pending{background:#f2efe4;}
+  .result-icon{font-size:1.8rem;margin-bottom:6px;}
+  .result-headline{font-size:1.15rem;font-weight:700;}
+  .result-headline.ok{color:var(--ok);}
+  .result-headline.miss{color:var(--miss);}
+  .result-headline.pending{color:var(--ink-soft);}
+  .result-sub{
+    font-family:'Noto Sans Thai',sans-serif;
+    font-size:0.82rem;
+    color:var(--ink-soft);
+    margin-top:6px;
+  }
+  .missing-list{
+    margin-top:12px;
+    text-align:left;
+    font-family:'Noto Sans Thai',sans-serif;
+    font-size:0.8rem;
+    background:#fff;
+    border-radius:8px;
+    padding:12px 16px;
+    border:1px solid #e4c2c2;
+  }
+  .missing-list li{margin-bottom:4px;color:var(--miss);}
+
+  .work-result{
+    margin:0 0 20px;
+    padding:16px 18px;
+    border-radius:10px;
+    border:1px solid var(--line);
+    background:var(--plum-bg);
+    font-size:0.84rem;
+    color:var(--plum);
+    text-align:center;
+    font-weight:600;
+  }
+  .work-result.done{background:var(--ok-bg);color:var(--ok);}
+
+  .disclaimer{
+    text-align:center;
+    font-size:0.7rem;
+    color:var(--ink-soft);
+    padding:0 20px 10px;
+    line-height:1.6;
+  }
+
+  .reset-link{text-align:center;padding-bottom:8px;}
+  .reset-link button{
+    background:none;border:none;color:var(--navy-2);
+    font-size:0.78rem;text-decoration:underline;cursor:pointer;font-family:inherit;
+  }
+
+  @media (max-width:400px){ h1{font-size:1.25rem;} }
+</style>
+</head>
+<body>
+
+<div class="seal-bar"></div>
+<header class="hero">
+  <div class="eyebrow">ก.ศป. · แบบตรวจสอบคุณสมบัติเบื้องต้น</div>
+  <h1>ผู้สมัครตุลาการประจำ<br>ศาลปกครองชั้นต้น</h1>
+  <p class="subtitle">ติ๊กเครื่องหมายในข้อที่ท่านมีคุณสมบัติตรงตามจริง ระบบจะประมวลผลให้อัตโนมัติว่าท่านมีคุณสมบัติครบถ้วนตามประกาศ ก.ศป. หรือไม่ พร้อมติดตามการเตรียมผลงานก่อนสัมภาษณ์</p>
+</header>
+
+<main>
+
+  <div class="stage-label">ขั้นที่ ๑ · คุณสมบัติผู้สมัคร (ข้อ ๒)</div>
+
+  <!-- SECTION 1: ทั่วไป -->
+  <div class="section" data-group="general">
+    <div class="section-head">
+      <span class="section-num">๑–๒</span>
+      <span class="section-title">คุณสมบัติทั่วไป</span>
+    </div>
+    <div class="section-rule"><b>ต้องมีครบทุกข้อ</b> — ข้อ ๒(๑)–(๒) แห่งประกาศ ก.ศป.</div>
+    <div class="items"></div>
+  </div>
+
+  <!-- SECTION 2: คุณวุฒิ - เลือกเส้นทาง ก หรือ ข -->
+  <div class="section" data-group="qualification">
+    <div class="section-head">
+      <span class="section-num">๓</span>
+      <span class="section-title">คุณวุฒิด้านใดด้านหนึ่ง <span class="path-note">เลือก ๑ เส้นทาง</span></span>
+    </div>
+    <div class="section-rule">ตามข้อ ๒(๓) — เลือกเส้นทางที่ตรงกับคุณวุฒิของท่าน แล้วติ๊กเงื่อนไขในเส้นทางนั้นให้ครบ</div>
+    <div class="path-tabs">
+      <div class="path-tab" data-path="a">(ก) วุฒิเฉพาะสาขา</div>
+      <div class="path-tab" data-path="b">(ข) ผู้ทรงคุณวุฒิบริหารฯ</div>
+    </div>
+    <div class="status-row">
+      <div class="status-label">สถานะของท่าน (มีผลกับเงื่อนไขบางข้อด้านล่าง)</div>
+      <div class="status-tabs">
+        <div class="status-tab" data-status="civil">เป็นข้าราชการ</div>
+        <div class="status-tab" data-status="noncivil">ไม่ใช่ข้าราชการ (ตำแหน่งอื่นในหน่วยงานรัฐ)</div>
+      </div>
+    </div>
+    <div class="items"></div>
+    <div class="group-progress"></div>
+  </div>
+
+  <!-- SECTION: คุณสมบัติอื่น (ประสบการณ์/ตำแหน่ง) -->
+  <div class="section" data-group="experience">
+    <div class="section-head">
+      <span class="section-num">๔</span>
+      <span class="section-title">คุณสมบัติอื่นอย่างหนึ่งอย่างใด <span class="or-note">เลือกอย่างน้อย ๑ ข้อ</span></span>
+    </div>
+    <div class="section-rule">ตามข้อ ๒(๔) — ประสบการณ์/ตำแหน่ง เข้าเกณฑ์เพียงข้อเดียวก็เพียงพอ ติ๊กเฉพาะข้อที่ตรงกับท่าน</div>
+    <div class="items"></div>
+    <div class="group-progress"></div>
+  </div>
+
+  <!-- SECTION 3: ลักษณะต้องห้าม -->
+  <div class="section" data-group="prohibited">
+    <div class="section-head">
+      <span class="section-num">๕</span>
+      <span class="section-title">ไม่มีลักษณะต้องห้าม <span class="and-note">ต้องยืนยันครบทุกข้อ</span></span>
+    </div>
+    <div class="section-rule">ตามข้อ ๒(๕) — โปรดติ๊กยืนยันว่า <b>ท่านไม่มี</b>ลักษณะต้องห้ามต่อไปนี้</div>
+    <div class="items"></div>
+  </div>
+
+  <div id="mainResultSlot"></div>
+
+  <div class="stage-label plum">ขั้นที่ ๒ · ก่อนสอบสัมภาษณ์ (ข้อ ๔.๒.๔)</div>
+
+  <!-- SECTION 4: ผลงานก่อนสัมภาษณ์ -->
+  <div class="section" data-group="worklog">
+    <div class="section-head">
+      <span class="section-num">๔.๒.๔</span>
+      <span class="section-title">ผลการปฏิบัติงาน/ผลงานวิชาการ <span class="and-note" style="background:var(--plum-bg);color:var(--plum);">ต้องครบ ๔ ชิ้น</span></span>
+    </div>
+    <div class="section-rule">ยื่นภายใน <b>10 วันทำการ</b> หลังประกาศผลตรวจสอบคุณสมบัติ — ผลงานทั้ง 4 ชิ้น<b>เป็นประเภทเดียวกันหรือคละกันก็ได้</b> (ไม่จำเป็นต้องมีครบทุกประเภทตามตัวอย่าง) แต่ละชิ้นต้องตรงกับชื่อเรื่องที่ระบุไว้ในข้อ ๘ ของใบสมัคร และสรุปไม่เกิน 2 หน้า A4</div>
+    <div class="items"></div>
+    <div class="group-progress"></div>
+  </div>
+
+  <div id="workResultSlot"></div>
+
+</main>
+
+<div class="disclaimer">
+  เครื่องมือนี้เป็นเพียงแบบตรวจสอบเบื้องต้นเพื่อประกอบการพิจารณาของท่านเอง<br>
+  มิใช่การรับรองสิทธิสมัครอย่างเป็นทางการ — สำนักงานศาลปกครองเป็นผู้ตรวจสอบคุณสมบัติจริงตามเอกสารและหลักฐาน
+</div>
+
+<div class="reset-link"><button onclick="resetAll()">ล้างค่าทั้งหมด</button></div>
+
+<div class="summary-bar">
+  <div class="summary-inner">
+    <svg id="ringSvg" width="46" height="46" viewBox="0 0 46 46">
+      <circle cx="23" cy="23" r="19" fill="none" stroke="#e6e0cc" stroke-width="5"/>
+      <circle id="ringFg" cx="23" cy="23" r="19" fill="none" stroke="#16233f" stroke-width="5"
+              stroke-dasharray="119.4" stroke-dashoffset="119.4" stroke-linecap="round"
+              transform="rotate(-90 23 23)"/>
+    </svg>
+    <div class="summary-text">
+      <div class="summary-title pending" id="summaryTitle">เริ่มติ๊กคุณสมบัติของท่านด้านบน</div>
+      <div class="summary-detail" id="summaryDetail">ขั้นที่ ๑: 0 / 4 หมวดผ่านเงื่อนไข</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== ขั้นที่ 1: คุณสมบัติผู้สมัคร (ข้อ 2) =====
+const DATA = {
+  general: {
+    mode: "all",
+    label: "คุณสมบัติทั่วไป",
+    items: [
+      { code: "๒(๑)", text: "มีสัญชาติไทย" },
+      { code: "๒(๒)", text: "มีอายุไม่ต่ำกว่า ๓๕ ปีบริบูรณ์ แต่ไม่เกิน ๖๕ ปีบริบูรณ์ นับถึงวันปิดรับสมัคร (และไม่เกิน ๖๕ ปีในปีงบประมาณที่มีการแต่งตั้งด้วย)" },
+    ]
+  },
+  experience: {
+    mode: "any",
+    label: "คุณสมบัติอื่นอย่างหนึ่งอย่างใด (ประสบการณ์/ตำแหน่ง)",
+    items: [
+      { code: "(ก)", text: "รับราชการหรือเคยรับราชการไม่น้อยกว่า 3 ปี ในตำแหน่งไม่ต่ำกว่าพนักงานคดีปกครองระดับ 7 หรือระดับชำนาญการ" },
+      { code: "(ข)", text: "รับราชการหรือเคยรับราชการไม่น้อยกว่า 3 ปี ในตำแหน่งไม่ต่ำกว่าผู้พิพากษาศาลชั้นต้นซึ่งได้รับเงินเดือนชั้น 3 หรือตุลาการพระธรรมนูญศาลทหารกลาง" },
+      { code: "(ค)", text: "รับราชการหรือเคยรับราชการไม่น้อยกว่า 3 ปี ในตำแหน่งไม่ต่ำกว่าอัยการจังหวัดหรือเทียบเท่า" },
+      { code: "(ง)", text: "รับราชการหรือเคยรับราชการไม่น้อยกว่า 3 ปี ในตำแหน่งไม่ต่ำกว่าข้าราชการพลเรือนระดับ 8 / ชำนาญการพิเศษ / ประเภทอำนวยการหรือบริหาร หรือตำแหน่งเทียบเท่าตามที่ ก.ศป. กำหนด (เช่น พ.ต.อ.)" },
+      { code: "(จ)", text: "เป็นหรือเคยเป็นผู้สอนในสถาบันอุดมศึกษา วิชานิติศาสตร์ รัฐศาสตร์ รัฐประศาสนศาสตร์ เศรษฐศาสตร์ สังคมศาสตร์ หรือวิชาเกี่ยวกับการบริหารราชการแผ่นดิน โดยดำรงตำแหน่งไม่ต่ำกว่ารองศาสตราจารย์ หรือรองศาสตราจารย์พิเศษ มาแล้วไม่น้อยกว่า 3 ปี" },
+      { code: "(ฉ)", text: "สำเร็จปริญญาโทหรือปริญญาเอกด้านนิติศาสตร์ สาขากฎหมายมหาชน และรับราชการ/ปฏิบัติงานในหน่วยงานของรัฐ องค์การมหาชน หรือรัฐวิสาหกิจ (ตั้งโดย พ.ร.บ./พ.ร.ฎ.) ไม่น้อยกว่า 10 ปีนับแต่จบปริญญาโท หรือ 6 ปีนับแต่จบปริญญาเอก" },
+      { code: "(ช)", text: "เป็นหรือเคยเป็นผู้ประกอบวิชาชีพทนายความไม่น้อยกว่า 12 ปี และมีประสบการณ์คดีปกครองตามหลักเกณฑ์ ก.ศป." },
+    ]
+  },
+  prohibited: {
+    mode: "all",
+    label: "การไม่มีลักษณะต้องห้าม",
+    items: [
+      { code: "(ก)", text: "ไม่เป็นผู้ที่เป็นโรคหรือมีกายหรือจิตใจไม่เหมาะสมที่จะเป็นตุลาการศาลปกครอง" },
+      { code: "(ข)", text: "ไม่เป็นผู้มีความประพฤติเสื่อมเสียหรือบกพร่องในศีลธรรมอันดี" },
+      { code: "(ค)", text: "ไม่เป็นผู้มีหนี้สินล้นพ้นตัว" },
+      { code: "(ง)", text: "ไม่เป็นบุคคลล้มละลาย" },
+      { code: "(จ)", text: "ไม่เป็นผู้อยู่ระหว่างถูกสั่งให้พักราชการหรือถูกสั่งให้ออกจากราชการไว้ก่อนตามกฎหมาย" },
+      { code: "(ฉ)", text: "ไม่เป็นผู้เคยถูกลงโทษไล่ออก ปลดออก หรือให้ออกจากราชการ รัฐวิสาหกิจ หรือหน่วยงานของรัฐ" },
+      { code: "(ช)", text: "ไม่เป็นผู้เคยต้องรับโทษจำคุกโดยคำพิพากษาถึงที่สุดให้จำคุก เว้นแต่เป็นโทษสำหรับความผิดที่ได้กระทำโดยประมาทหรือความผิดลหุโทษ" },
+      { code: "(ซ)", text: "ไม่เป็นคนไร้ความสามารถ คนเสมือนไร้ความสามารถ คนวิกลจริตหรือจิตฟั่นเฟือนไม่สมประกอบ" },
+    ]
+  }
+};
+
+// เส้นทางคุณวุฒิ (ข้อ 2(3)) — เลือก 1 เส้นทาง แล้วติ๊กเงื่อนไขในเส้นทางนั้นให้ครบ
+// cond: null = ต้องมีเสมอ, "civil" = ใช้เฉพาะกรณีเป็นข้าราชการ, "noncivil" = ใช้เฉพาะกรณีไม่ใช่ข้าราชการ
+const QUAL_PATHS = {
+  a: {
+    label: "(ก) วุฒิเฉพาะสาขา",
+    items: [
+      { code: "1", cond: null, text: "สำเร็จปริญญาตรีขึ้นไปในสาขานิติศาสตร์ รัฐศาสตร์ รัฐประศาสนศาสตร์ หรือเศรษฐศาสตร์ (หรือสังคมศาสตร์อื่นที่เน้นเนื้อหาเทียบเคียงตามเกณฑ์ ก.ศป.)" },
+      { code: "2", cond: null, text: "ผ่านการอบรมหลักสูตรพนักงานคดีปกครองระดับกลาง / หลักสูตรกฎหมายปกครอง / หลักสูตรกฎหมายมหาชนที่ ก.ศป. รับรอง (เช่น กศ.ป.)" },
+      { code: "3", cond: "noncivil", text: "มีประสบการณ์ทำงานในหน่วยงานรัฐ (ตำแหน่งที่ไม่ใช่ข้าราชการ) รวมไม่น้อยกว่า 15 ปี" },
+    ]
+  },
+  b: {
+    label: "(ข) ผู้ทรงคุณวุฒิในการบริหารราชการแผ่นดิน",
+    items: [
+      { code: "1", cond: null, text: "สำเร็จปริญญาตรีขึ้นไป (สาขาใดก็ได้) จากสถานศึกษาที่ ก.พ. รับรอง" },
+      { code: "2", cond: null, text: "ผ่านการอบรมหลักสูตรพนักงานคดีปกครองระดับกลาง / หลักสูตรกฎหมายปกครอง / หลักสูตรกฎหมายมหาชนที่ ก.ศป. รับรอง" },
+      { code: "3", cond: "civil", text: "ดำรงตำแหน่งหรือเคยดำรงตำแหน่งบริหารที่ได้รับเงินประจำตำแหน่งประเภทบริหารมาแล้วไม่น้อยกว่า 3 ปี" },
+      { code: "4", cond: "noncivil", text: "มีประสบการณ์ทำงานในหน่วยงานรัฐ (ตำแหน่งที่ไม่ใช่ข้าราชการ) รวมไม่น้อยกว่า 15 ปี" },
+    ]
+  }
+};
+
+// ===== ขั้นที่ 2: ผลงานก่อนสัมภาษณ์ (ข้อ 4.2.4) =====
+// ผลงานทั้ง 4 ชิ้น เป็นประเภทเดียวกันหรือคละกันก็ได้ ตัวอย่างประเภทมีดังนี้ (เลือกอิสระต่อชิ้น)
+const WORK_CATEGORIES = [
+  { group: "ประสบการณ์ในการทำงาน", value: "work-a", label: "(๑.๑ก) ผลการปฏิบัติงานสำคัญที่แสดงศักยภาพเหมาะสมกับตำแหน่ง" },
+  { group: "ประสบการณ์ในการทำงาน", value: "work-b", label: "(๑.๑ข) รายงาน/บันทึกความเห็น/รายงานการประชุม" },
+  { group: "ประสบการณ์ในการทำงาน", value: "work-c", label: "(๑.๑ค) คู่มือปฏิบัติราชการ/ปฏิบัติงานที่จัดทำขึ้นเองและใช้จริง" },
+  { group: "ผลงานทางวิชาการ", value: "acad-a", label: "(๑.๒ก) ตำราทางวิชาการ" },
+  { group: "ผลงานทางวิชาการ", value: "acad-b", label: "(๑.๒ข) บทความวิชาการที่ลงพิมพ์ในวารสาร/หนังสือพิมพ์" },
+  { group: "ผลงานทางวิชาการ", value: "acad-c", label: "(๑.๒ค) วิทยานิพนธ์/สารนิพนธ์/รายงานส่วนหนึ่งของหลักสูตร" },
+  { group: "ผลงานทางวิชาการ", value: "acad-d", label: "(๑.๒ง) ผลงานศึกษา/วิจัยที่จัดพิมพ์เป็นเล่มเสนอต่อหน่วยงาน" },
+  { group: "ผลงานทางวิชาการ", value: "acad-e", label: "(๑.๒จ) บทความเสนอที่ประชุมสัมมนาทางวิชาการ" },
+];
+const workSlots = [
+  { checked:false, category:"", title:"" },
+  { checked:false, category:"", title:"" },
+  { checked:false, category:"", title:"" },
+  { checked:false, category:"", title:"" },
+];
+
+const state = { general: new Set(), experience: new Set(), prohibited: new Set(), qualPath: null, civilStatus: null, qualChecked: new Set() };
+
+function render(){
+  renderSimpleGroup("general");
+  renderSimpleGroup("experience");
+  const expProg = document.querySelector('.section[data-group="experience"] .group-progress');
+  expProg.textContent = state.experience.size > 0
+    ? `เลือกแล้ว ${state.experience.size} ข้อ ✓ ผ่านเงื่อนไข "อย่างน้อย ๑ ข้อ"`
+    : "ยังไม่ได้เลือกข้อใด";
+  renderSimpleGroup("prohibited");
+  renderQualification();
+  renderWorklog();
+  updateSummary();
+}
+
+function renderSimpleGroup(groupKey){
+  const group = DATA[groupKey];
+  const section = document.querySelector(`.section[data-group="${groupKey}"] .items`);
+  section.innerHTML = "";
+  group.items.forEach((it, idx)=>{
+    const div = document.createElement("div");
+    div.className = "item" + (state[groupKey].has(idx) ? " checked" : "");
+    div.onclick = ()=> { toggleSet(state[groupKey], idx); render(); };
+    div.innerHTML = itemHTML(it);
+    section.appendChild(div);
+  });
+}
+
+function itemHTML(it){
+  return `
+    <div class="checkbox">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div class="item-text"><span class="item-code">${it.code}</span> ${it.text}</div>
+  `;
+}
+
+function toggleSet(set, idx){
+  if (set.has(idx)) set.delete(idx); else set.add(idx);
+}
+
+function itemApplies(it){
+  // ข้อที่ไม่มี cond ใช้เสมอ; ข้อที่มี cond ใช้เฉพาะเมื่อสถานะตรงกัน
+  if (!it.cond) return true;
+  return it.cond === state.civilStatus;
+}
+
+function renderQualification(){
+  const tabs = document.querySelectorAll(".path-tab");
+  tabs.forEach(tab=>{
+    tab.classList.toggle("active", state.qualPath === tab.dataset.path);
+    tab.onclick = ()=>{
+      if (state.qualPath !== tab.dataset.path){
+        state.qualPath = tab.dataset.path;
+        state.qualChecked = new Set();
+      }
+      render();
+    };
+  });
+
+  const statusTabs = document.querySelectorAll(".status-tab");
+  statusTabs.forEach(tab=>{
+    tab.classList.toggle("active", state.civilStatus === tab.dataset.status);
+    tab.onclick = ()=>{
+      state.civilStatus = tab.dataset.status;
+      render();
+    };
+  });
+
+  const section = document.querySelector('.section[data-group="qualification"] .items');
+  const progress = document.querySelector('.section[data-group="qualification"] .group-progress');
+  section.innerHTML = "";
+
+  if (!state.qualPath){
+    progress.textContent = "โปรดเลือกเส้นทางคุณวุฒิด้านบนก่อน";
+    return;
+  }
+  if (!state.civilStatus){
+    progress.textContent = "โปรดเลือกสถานะของท่าน (ข้าราชการ / ไม่ใช่ข้าราชการ) ก่อน";
+  }
+  const path = QUAL_PATHS[state.qualPath];
+  let applicableCount = 0, checkedApplicable = 0;
+
+  path.items.forEach((it, idx)=>{
+    const applies = itemApplies(it);
+    const div = document.createElement("div");
+    if (!applies){
+      // ข้อที่ไม่เกี่ยวกับสถานะที่เลือก — แสดงเป็น "ไม่ต้องพิจารณา" ไม่ใช่ช่องติ๊ก
+      div.className = "item na";
+      div.innerHTML = `
+        <div class="checkbox">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="item-text"><span class="item-code">${it.code}</span> ${it.text} <span class="na-tag">ไม่ใช้กับสถานะนี้</span></div>
+      `;
+    } else {
+      applicableCount++;
+      if (state.qualChecked.has(idx)) checkedApplicable++;
+      div.className = "item" + (state.qualChecked.has(idx) ? " checked" : "");
+      div.onclick = ()=> { toggleSet(state.qualChecked, idx); render(); };
+      div.innerHTML = itemHTML(it);
+    }
+    section.appendChild(div);
+  });
+
+  if (state.civilStatus){
+    progress.textContent = `เส้นทาง ${path.label} (${state.civilStatus === "civil" ? "ข้าราชการ" : "ไม่ใช่ข้าราชการ"}) — ติ๊กแล้ว ${checkedApplicable} / ${applicableCount} ข้อที่เกี่ยวข้อง`;
+  }
+}
+
+function renderWorklog(){
+  const section = document.querySelector('.section[data-group="worklog"] .items');
+  const progress = document.querySelector('.section[data-group="worklog"] .group-progress');
+  section.innerHTML = "";
+  workSlots.forEach((slot, idx)=>{
+    const div = document.createElement("div");
+    div.className = "item" + (slot.checked ? " checked" : "");
+    div.onclick = (e)=>{
+      if (e.target.tagName === "INPUT" || e.target.tagName === "SELECT" || e.target.tagName === "OPTION") return;
+      slot.checked = !slot.checked;
+      render();
+    };
+    const catInfo = WORK_CATEGORIES.find(c => c.value === slot.category);
+    div.innerHTML = `
+      <div class="checkbox">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="item-text"><span class="item-code">ชิ้นที่ ${idx+1}</span>${catInfo ? `<span class="work-group-tag">${catInfo.group}</span>` : ""}</div>
+    `;
+    section.appendChild(div);
+
+    const noteWrap = document.createElement("div");
+    noteWrap.className = "work-note-wrap";
+    const options = ['<option value="">— เลือกประเภทผลงาน (เลือกซ้ำประเภทเดียวกันได้) —</option>']
+      .concat(WORK_CATEGORIES.map(c => `<option value="${c.value}" ${slot.category===c.value?"selected":""}>${c.label}</option>`));
+    noteWrap.innerHTML = `
+      <select>${options.join("")}</select>
+      <input type="text" placeholder="ระบุชื่อเรื่อง/ชิ้นงาน (ต้องตรงกับข้อ 8 ในใบสมัคร)" value="${slot.title.replace(/"/g,'&quot;')}">
+    `;
+    noteWrap.querySelector("select").onchange = (e)=>{ slot.category = e.target.value; render(); };
+    noteWrap.querySelector("input").oninput = (e)=>{ slot.title = e.target.value; };
+    section.appendChild(noteWrap);
+  });
+  const count = workSlots.filter(s=>s.checked).length;
+  progress.textContent = `เตรียมผลงานแล้ว ${count} / 4 ชิ้น (เลือกประเภทซ้ำกันได้ ไม่บังคับต้องครบทุกประเภทตัวอย่าง)`;
+}
+
+// ---- logic: หมวดที่ 1 (ผ่าน/ไม่ผ่าน) ----
+function generalPasses(){ return state.general.size === DATA.general.items.length; }
+function experiencePasses(){ return state.experience.size >= 1; }
+function prohibitedPasses(){ return state.prohibited.size === DATA.prohibited.items.length; }
+function qualificationPasses(){
+  if (!state.qualPath || !state.civilStatus) return false;
+  const path = QUAL_PATHS[state.qualPath];
+  const applicable = path.items.filter(itemApplies);
+  return applicable.every((it, i) => {
+    const idx = path.items.indexOf(it);
+    return state.qualChecked.has(idx);
+  });
+}
+function worklogPasses(){ return workSlots.every(s => s.checked); }
+
+function updateSummary(){
+  const stage1 = [generalPasses(), qualificationPasses(), experiencePasses(), prohibitedPasses()];
+  const stage1Passed = stage1.filter(Boolean).length;
+  const stage1All = stage1Passed === 4;
+  const stage1AnyTouched = state.general.size>0 || state.experience.size>0 || state.qualPath!==null || state.civilStatus!==null || state.prohibited.size>0;
+
+  const title = document.getElementById("summaryTitle");
+  const detail = document.getElementById("summaryDetail");
+  const ring = document.getElementById("ringFg");
+  const circumference = 119.4;
+
+  ring.style.strokeDashoffset = circumference - (stage1Passed/4)*circumference;
+  ring.setAttribute("stroke", stage1All ? "#2f6f4e" : "#16233f");
+
+  if (!stage1AnyTouched){
+    title.className = "summary-title pending";
+    title.textContent = "เริ่มติ๊กคุณสมบัติของท่านด้านบน";
+    detail.textContent = "ขั้นที่ ๑: 0 / 4 หมวดผ่านเงื่อนไข";
+  } else if (stage1All){
+    title.className = "summary-title ok";
+    title.textContent = "ขั้นที่ ๑: ท่านมีคุณสมบัติครบถ้วน ✓";
+    detail.textContent = `ผลงานก่อนสัมภาษณ์: ${workSlots.filter(s=>s.checked).length} / 4 ชิ้น`;
+  } else {
+    title.className = "summary-title miss";
+    title.textContent = "ขั้นที่ ๑: ยังขาดคุณสมบัติ";
+    detail.textContent = `ผ่าน ${stage1Passed} / 4 หมวด — เลื่อนลงเพื่อดูรายละเอียด`;
+  }
+
+  renderMainResult(stage1All, stage1AnyTouched);
+  renderWorkResult(stage1All);
+}
+
+function renderMainResult(stage1All, anyTouched){
+  let box = document.getElementById("resultBox");
+  if (!box){
+    box = document.createElement("div");
+    box.id = "resultBox";
+    document.getElementById("mainResultSlot").appendChild(box);
+  }
+  if (!anyTouched){
+    box.className = "result-box pending";
+    box.innerHTML = `<div class="result-icon">☐</div><div class="result-headline pending">ยังไม่มีข้อมูล</div><div class="result-sub">โปรดติ๊กคุณสมบัติของท่านในแต่ละหมวดด้านบน</div>`;
+    return;
+  }
+  if (stage1All){
+    box.className = "result-box ok";
+    box.innerHTML = `<div class="result-icon">✓</div><div class="result-headline ok">ท่านมีคุณสมบัติครบถ้วน</div><div class="result-sub">ท่านมีคุณสมบัติตรงตามเงื่อนไขที่ประกาศ ก.ศป. กำหนดไว้ในขั้นที่ ๑ ครบทุกหมวด — ต่อไปคือเตรียมผลงานก่อนสัมภาษณ์ (ด้านล่าง)</div>`;
+  } else {
+    const missing = [];
+    if (!generalPasses()) missing.push("คุณสมบัติทั่วไป — ยังติ๊กไม่ครบทุกข้อ");
+    if (!qualificationPasses()){
+      let msg = "คุณวุฒิ — ";
+      if (!state.qualPath) msg += "ยังไม่ได้เลือกเส้นทาง (ก)/(ข)";
+      else if (!state.civilStatus) msg += "ยังไม่ได้เลือกสถานะ (ข้าราชการ/ไม่ใช่ข้าราชการ)";
+      else msg += "ยังติ๊กไม่ครบตามเส้นทางและสถานะที่เลือก";
+      missing.push(msg);
+    }
+    if (!experiencePasses()) missing.push("คุณสมบัติอื่น (ประสบการณ์/ตำแหน่ง) — ยังไม่ได้เลือกอย่างน้อย ๑ ข้อ");
+    if (!prohibitedPasses()) missing.push("ลักษณะต้องห้าม — ยังยืนยันไม่ครบทุกข้อ");
+    box.className = "result-box miss";
+    box.innerHTML = `<div class="result-icon">✕</div><div class="result-headline miss">ยังขาดคุณสมบัติ</div><div class="result-sub">พบหมวดที่ยังไม่ผ่านเงื่อนไขดังนี้</div><ul class="missing-list">${missing.map(m=>`<li>${m}</li>`).join("")}</ul>`;
+  }
+}
+
+function renderWorkResult(stage1All){
+  let box = document.getElementById("workResultBox");
+  if (!box){
+    box = document.createElement("div");
+    box.id = "workResultBox";
+    document.getElementById("workResultSlot").appendChild(box);
+  }
+  const done = worklogPasses();
+  box.className = "work-result" + (done ? " done" : "");
+  if (done){
+    box.textContent = "✓ เตรียมผลงานครบ 4 ชิ้นแล้ว — พร้อมยื่นภายใน 10 วันทำการหลังประกาศผลตรวจสอบคุณสมบัติ";
+  } else {
+    box.textContent = `ยังเตรียมผลงานไม่ครบ (${workSlots.filter(s=>s.checked).length}/4 ชิ้น) — อย่าลืมให้ตรงกับชื่อเรื่องที่ระบุในข้อ 8 ของใบสมัคร (เลือกประเภทซ้ำกันได้)`;
+  }
+}
+
+function resetAll(){
+  state.general = new Set();
+  state.experience = new Set();
+  state.prohibited = new Set();
+  state.qualPath = null;
+  state.civilStatus = null;
+  state.qualChecked = new Set();
+  workSlots.forEach(s => { s.checked=false; s.category=""; s.title=""; });
+  render();
+}
+
+render();
+</script>
+</body>
+</html>
